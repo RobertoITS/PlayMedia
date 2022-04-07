@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "849684529878",
+    "project_id": "playmedia-c0f48",
+    "storage_bucket": "playmedia-c0f48.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:849684529878:android:918debd70665bda34c3f77",
+        "android_client_info": {
+          "package_name": "com.hvdevs.myapplication"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "849684529878-cvfem8g2kbob3olu0i8nu3o0b0st8134.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDX4qUZlYJkgKUt9PAQPSkfWjyb-LmDoNk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "849684529878-cvfem8g2kbob3olu0i8nu3o0b0st8134.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
