@@ -1,4 +1,4 @@
-package com.hvdevs.playmedia
+package com.hvdevs.playmedia.ui
 
 import android.os.Bundle
 import androidx.fragment.app.Fragment
@@ -6,6 +6,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.navigation.fragment.findNavController
+import com.hvdevs.playmedia.R
 import com.hvdevs.playmedia.databinding.FragmentLoginBinding
 
 class LoginFragment : Fragment() {

@@ -1,4 +1,4 @@
-package com.hvdevs.playmedia
+package com.hvdevs.playmedia.ui
 
 import android.annotation.SuppressLint
 import android.os.Bundle
@@ -10,6 +10,8 @@ import android.widget.TextView
 import androidx.fragment.app.Fragment
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
+import com.hvdevs.playmedia.R
+import com.hvdevs.playmedia.utilities.IOnBackPressed
 
 
 class MediaFragment : Fragment(), IOnBackPressed {

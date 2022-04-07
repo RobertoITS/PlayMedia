@@ -6,7 +6,7 @@
     app:startDestination="@id/loginFragment">
     <fragment
         android:id="@+id/loginFragment"
-        android:name="com.hvdevs.playmedia.LoginFragment"
+        android:name="com.hvdevs.playmedia.ui.LoginFragment"
         android:label="fragment_login"
         tools:layout="@layout/fragment_login" >
         <action
@@ -19,7 +19,7 @@
     </fragment>
     <fragment
         android:id="@+id/mainFragment"
-        android:name="com.hvdevs.playmedia.MainFragment"
+        android:name="com.hvdevs.playmedia.ui.MainFragment"
         android:label="fragment_main"
         tools:layout="@layout/fragment_main" >
         <action
@@ -32,7 +32,7 @@
     </fragment>
     <fragment
         android:id="@+id/mediaFragment"
-        android:name="com.hvdevs.playmedia.MediaFragment"
+        android:name="com.hvdevs.playmedia.ui.MediaFragment"
         android:label="fragment_media"
         tools:layout="@layout/fragment_media" />
 </navigation>
