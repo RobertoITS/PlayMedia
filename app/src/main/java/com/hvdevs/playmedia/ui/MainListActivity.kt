@@ -4,21 +4,25 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
 import android.widget.ExpandableListView
+import android.widget.Toast
 import com.google.firebase.database.*
-import com.hvdevs.playmedia.ASD
 import com.hvdevs.playmedia.R
+import com.hvdevs.playmedia.adapters.HelperAdapter
 import com.hvdevs.playmedia.constructor.ChildModel
+import com.hvdevs.playmedia.constructor.ParentModel
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 class MainListActivity : AppCompatActivity() {
 
     private lateinit var dbParent: DatabaseReference
     private lateinit var dbChild: DatabaseReference
 
-    lateinit var header: ArrayList<String>
-    lateinit var body: HashMap<String, ArrayList<ChildModel>>
-
+    private var parentItem:LinkedHashMap<String, ParentModel> = LinkedHashMap()
+    private var itemList: ArrayList<ParentModel> = arrayListOf()
+    private lateinit var helperAdapter: HelperAdapter
     private lateinit var expandableList: ExpandableListView
-    private lateinit var asd: ASD
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main_list_view)
@@ -28,62 +32,94 @@ class MainListActivity : AppCompatActivity() {
 
         expandableList = findViewById(R.id.sample_list)
 
-        getData()
+        getParentData()
 
+        expandableList.setOnChildClickListener { expandableListView, view, parentPosition, childPosition, long ->
+            val parentInfo = itemList[parentPosition]
+            val childInfo = parentInfo.itemList[childPosition]
+            Toast.makeText(baseContext, childInfo.name, Toast.LENGTH_SHORT).show()
 
-
-    }
-
-    private fun getData() {
-        header = arrayListOf()
-        body = hashMapOf()
-
-        for (i in 0..9){
-            dbParent = FirebaseDatabase.getInstance().getReference("channels/$i")
-            dbParent.addChildEventListener(object : ChildEventListener{
-                var counter = 0
-                lateinit var childItem: ArrayList<ChildModel>
-                override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
-                    val headerItem: String = snapshot.key.toString()
-                    header.add(headerItem)
-                    Log.d("FIREBASE", headerItem)
-                    childItem = arrayListOf()
-                    for (ds in snapshot.children){
-                        val name = ds.getValue(ChildModel::class.java)
-                        Log.d("FIREBASE", name!!.name)
-                        childItem.add(name)
-                    }
-                    //Se agrega en la lista hash, el item principal, con su sublista, el index lo da el counter
-                    body[header[counter]] = childItem
-                    counter ++
-
-                    asd = ASD(this@MainListActivity, header, body)
-
-                    asd.notifyDataSetChanged()
-
-                    expandableList.setAdapter(asd)
-                }
-
-                override fun onChildChanged(snapshot: DataSnapshot, previousChildName: String?) {
-                    TODO("Not yet implemented")
-                }
-
-                override fun onChildRemoved(snapshot: DataSnapshot) {
-                    TODO("Not yet implemented")
-                }
-
-                override fun onChildMoved(snapshot: DataSnapshot, previousChildName: String?) {
-                    TODO("Not yet implemented")
-                }
-
-                override fun onCancelled(error: DatabaseError) {
-                    TODO("Not yet implemented")
-                }
-
-            })
+            false
         }
 
+        expandableList.setOnGroupClickListener { expandableListView, view, parentPosition, long ->
+            val parentInfo = itemList[parentPosition]
+            Toast.makeText(baseContext, parentInfo.name, Toast.LENGTH_SHORT).show()
+            false
+        }
     }
 
+    private fun addItem(parentItemList: String, subItemList: ChildModel): Int{
+        val parentPosition: Int
+        var parentInfo: ParentModel? = parentItem[parentItemList]
+        if (parentInfo == null){
+            parentInfo = ParentModel()
+            parentInfo.name = parentItemList
+            parentItem[parentItemList] = parentInfo
+            itemList.add(parentInfo)
+        }
+        val childItemList: ArrayList<ChildModel> = parentInfo.itemList
+        var listSize = childItemList.size
+        listSize++
 
+        val childInfo = ChildModel()
+        childInfo.drm_licence_url = subItemList.drm_licence_url
+        childInfo.drm_scheme = subItemList.drm_scheme
+        childInfo.icon = subItemList.icon
+        childInfo.name = subItemList.name
+        childInfo.uri = subItemList.uri
+        childItemList.add(childInfo)
+        parentInfo.itemList = childItemList
+
+        parentPosition = childItemList.indexOf(childInfo)
+
+        return parentPosition
+    }
+
+    private fun getParentData() {
+        var j = 0
+        dbParent = FirebaseDatabase.getInstance().getReference("channels")
+        dbParent.addValueEventListener(object : ValueEventListener{
+            override fun onDataChange(snapshot: DataSnapshot) {
+                if (snapshot.exists()){
+                    for (parentSnapshot in snapshot.children){
+                        val parent: String = parentSnapshot.child("name").value.toString()
+                        Log.d("FIREBASE", parent)
+                        getChildData(parent, j)
+                        j += 1
+                    }
+                }
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+            }
+
+        })
+    }
+
+    private fun getChildData(parent: String, j: Int) {
+        dbChild = FirebaseDatabase.getInstance().getReference("channels/$j/samples")
+        dbChild.addValueEventListener(object : ValueEventListener{
+            override fun onDataChange(snapshot: DataSnapshot) {
+                if (snapshot.exists()){
+                    for (childSnapshot in snapshot.children){
+                        val child = childSnapshot.getValue(ChildModel::class.java)
+                        Log.d("FIREBASE/CHILD", child?.name.toString())
+                        addItem(parent, child!!)
+
+                        helperAdapter = HelperAdapter(this@MainListActivity, itemList)
+
+                        helperAdapter.notifyDataSetChanged()
+
+                        expandableList.setAdapter(helperAdapter)
+                    }
+                }
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                TODO("Not yet implemented")
+            }
+
+        })
+    }
 }
