@@ -1,48 +1,27 @@
 package com.hvdevs.playmedia.ui
 
 import android.annotation.SuppressLint
+import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.CountDownTimer
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
 import android.widget.TextView
-import androidx.fragment.app.Fragment
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
 import com.hvdevs.playmedia.R
-import com.hvdevs.playmedia.utilities.IOnBackPressed
 
-
-class MediaFragment : Fragment(), IOnBackPressed {
+class PlayerActivity : AppCompatActivity() {
     private lateinit var countDownTimer: CountDownTimer
     var total: Long = 0
 
     val database = Firebase.database
     val myRef = database.getReference("time")
     var contador: Long = 0
-    @SuppressLint("CommitPrefEdits")
-    override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
-        // Inflate the layout for this fragment
-        val view = inflater.inflate(R.layout.fragment_media, container, false)
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_player)
 
-        val tv: TextView = view.findViewById(R.id.tv)
-//
-//        myRef.child("time").addValueEventListener(object : ValueEventListener{
-//            override fun onDataChange(snapshot: DataSnapshot) {
-//                Log.d("FIREBASE", snapshot.value.toString())
-//                val value = snapshot.value.toString()
-//                contador = value.toLong()
-//            }
-//
-//            override fun onCancelled(error: DatabaseError) {
-//
-//            }
-//
-//        })
+        val tv: TextView = findViewById(R.id.tv)
+
         contador = 10800000
         countDownTimer = object : CountDownTimer(contador, 1000) {
             @SuppressLint("SetTextI18n")
@@ -62,14 +41,11 @@ class MediaFragment : Fragment(), IOnBackPressed {
                 tv.text = "Time's finished!"
             }
         }.start()
-
-        return view
     }
 
-    override fun onBackPressed(): Boolean {
-        //Detiene el contador al presionar back
+    override fun onBackPressed() {
         countDownTimer.cancel()
-        return true
+        super.onBackPressed()
     }
 
 }

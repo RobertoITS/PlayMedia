@@ -14,3 +14,6 @@ dependencyResolutionManagement {
 }
 rootProject.name = "PlayMedia"
 include ':app'
+
+gradle.ext.exoplayerModulePrefix = 'exoplayer-'
+apply from: file("/home/roberto/StudioProjects/ExoPlayer/core_settings.gradle")

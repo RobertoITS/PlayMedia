@@ -1,15 +1,16 @@
 {
   "project_info": {
     "project_number": "849684529878",
+    "firebase_url": "https://playmedia-c0f48-default-rtdb.firebaseio.com",
     "project_id": "playmedia-c0f48",
     "storage_bucket": "playmedia-c0f48.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:849684529878:android:918debd70665bda34c3f77",
+        "mobilesdk_app_id": "1:849684529878:android:9e5cd4d0a9862bfe4c3f77",
         "android_client_info": {
-          "package_name": "com.hvdevs.myapplication"
+          "package_name": "com.hvdevs.playmedia"
         }
       },
       "oauth_client": [
