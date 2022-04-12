@@ -9,7 +9,7 @@ import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
 import com.hvdevs.playmedia.R
 
-class PlayerActivity : AppCompatActivity() {
+class PlayerActivity2 : AppCompatActivity() {
     private lateinit var countDownTimer: CountDownTimer
     var total: Long = 0
 
@@ -18,7 +18,7 @@ class PlayerActivity : AppCompatActivity() {
     var contador: Long = 0
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_player)
+        setContentView(R.layout.activity_player_unused)
 
         val tv: TextView = findViewById(R.id.tv)
 

@@ -1,11 +1,13 @@
 package com.hvdevs.playmedia.ui
 
+import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
 import android.widget.ExpandableListView
 import android.widget.Toast
 import com.google.firebase.database.*
+import com.hvdevs.playmedia.PlayerActivity
 import com.hvdevs.playmedia.R
 import com.hvdevs.playmedia.adapters.HelperAdapter
 import com.hvdevs.playmedia.constructor.ChildModel
@@ -38,7 +40,10 @@ class MainListActivity : AppCompatActivity() {
             val parentInfo = itemList[parentPosition]
             val childInfo = parentInfo.itemList[childPosition]
             Toast.makeText(baseContext, childInfo.name, Toast.LENGTH_SHORT).show()
-
+            val intent = Intent(this, PlayerActivity::class.java)
+            intent.putExtra("licence", childInfo.drm_license_url)
+            intent.putExtra("uri", childInfo.uri)
+            startActivity(intent)
             false
         }
 
@@ -63,7 +68,7 @@ class MainListActivity : AppCompatActivity() {
         listSize++
 
         val childInfo = ChildModel()
-        childInfo.drm_licence_url = subItemList.drm_licence_url
+        childInfo.drm_license_url = subItemList.drm_license_url
         childInfo.drm_scheme = subItemList.drm_scheme
         childInfo.icon = subItemList.icon
         childInfo.name = subItemList.name

@@ -103,12 +103,12 @@ class LoginActivity : AppCompatActivity() {
                         }
 
                     })
-                    if (type == "0") Toast.makeText(this, "No tiene permisos para ingresar", Toast.LENGTH_SHORT).show()
-                    if (type == "1") Toast.makeText(this, "Tiene tiempo de prueba", Toast.LENGTH_SHORT).show()
-                    if (type == "2") {
-                        Toast.makeText(this, "Hasta que expire su licencia", Toast.LENGTH_SHORT).show()
+//                    if (type == "0") Toast.makeText(this, "No tiene permisos para ingresar", Toast.LENGTH_SHORT).show()
+//                    if (type == "1") Toast.makeText(this, "Tiene tiempo de prueba", Toast.LENGTH_SHORT).show()
+//                    if (type == "2") {
+//                        Toast.makeText(this, "Hasta que expire su licencia", Toast.LENGTH_SHORT).show()
                         startActivity(Intent(this, MainListActivity::class.java))
-                    }
+//                    }
                 } else {
                     val errorMsg = Objects.requireNonNull(task.exception)?.localizedMessage
                     Toast.makeText(this, errorMsg, Toast.LENGTH_SHORT).show()
