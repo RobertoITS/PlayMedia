@@ -14,4 +14,11 @@
         <!-- Customize your theme here. -->
         <item name="fontFamily">@font/roboto_thin</item>
     </style>
+
+    <style parent="ThemeOverlay.AppCompat.Dialog.Alert" name="TrackSelectionDialogThemeOverlay">
+
+        <item name="windowNoTitle">false</item>
+
+    </style>
+
 </resources>

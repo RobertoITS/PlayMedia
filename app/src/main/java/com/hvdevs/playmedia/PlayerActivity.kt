@@ -1,17 +1,21 @@
 package com.hvdevs.playmedia
 
+import android.R
 import android.app.Activity
+import android.content.pm.ActivityInfo
+import android.content.res.Configuration
 import android.graphics.Color
 import android.net.Uri
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Handler
 import android.util.Log
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
+import android.widget.Toast
 import androidx.core.view.isGone
 import androidx.core.view.isVisible
 import com.google.ads.interactivemedia.v3.api.*
@@ -27,9 +31,7 @@ import com.google.android.exoplayer2.source.ads.AdPlaybackState
 import com.google.android.exoplayer2.source.dash.DashMediaSource
 import com.google.android.exoplayer2.trackselection.AdaptiveTrackSelection
 import com.google.android.exoplayer2.trackselection.DefaultTrackSelector
-import com.google.android.exoplayer2.ui.DefaultTrackNameProvider
-import com.google.android.exoplayer2.ui.TrackNameProvider
-import com.google.android.exoplayer2.ui.TrackSelectionDialogBuilder
+import com.google.android.exoplayer2.ui.*
 import com.google.android.exoplayer2.upstream.DataSource
 import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter
 import com.google.android.exoplayer2.upstream.DefaultDataSource
@@ -40,9 +42,11 @@ import com.google.android.exoplayer2.util.Util
 import com.google.android.exoplayer2.video.VideoSize
 import com.google.common.collect.ImmutableList
 import com.google.gson.Gson
+import com.hvdevs.playmedia.R.*
 import com.hvdevs.playmedia.databinding.ActivityPlayerBinding
 import com.michael.easydialog.EasyDialog
 import kotlin.math.roundToInt
+
 
 class PlayerActivity : Activity(), Player.Listener, AnalyticsListener, AdEvent.AdEventListener,
     AdErrorEvent.AdErrorListener, AdsLoader.AdsLoadedListener {
@@ -71,6 +75,13 @@ class PlayerActivity : Activity(), Player.Listener, AnalyticsListener, AdEvent.A
     private lateinit var STREAM_URL_MPD: String
     private lateinit var LICENCE_URL: String
 
+    //---------------------------------------------------------------------------------//
+    private var isShowingTrackSelectionDialog = false
+
+    var playerView: PlayerView? = null
+    var simpleExoPlayer: SimpleExoPlayer? = null
+    //---------------------------------------------------------------------------------//
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityPlayerBinding.inflate(layoutInflater)
@@ -81,6 +92,7 @@ class PlayerActivity : Activity(), Player.Listener, AnalyticsListener, AdEvent.A
 
         STREAM_URL_MPD = uri
         Log.d("DRM", drm)
+        Log.d("URL", uri)
         LICENCE_URL = drm
 
 
@@ -90,6 +102,54 @@ class PlayerActivity : Activity(), Player.Listener, AnalyticsListener, AdEvent.A
             .build()
 
         binding.detailBtn.setOnClickListener { showDialog() }
+
+
+
+
+        //---------------------------------------------------------------------------------//
+        trackSelector = DefaultTrackSelector(this)
+        simpleExoPlayer = SimpleExoPlayer.Builder(this).setTrackSelector(trackSelector).build()
+        playerView = binding.exoPlayerView
+        playerView!!.player = simpleExoPlayer
+//        val mediaItem = MediaItem.fromUri(url1)
+//        simpleExoPlayer!!.addMediaItem(mediaItem)
+//        simpleExoPlayer!!.prepare()
+//        simpleExoPlayer!!.play()
+
+        //Fullscreen
+        val fullscreenButton = playerView!!.findViewById<ImageView>(id.fullscreen)
+        fullscreenButton.setOnClickListener {
+            val orientation: Int =
+                this.resources.configuration.orientation
+            requestedOrientation = if (orientation == Configuration.ORIENTATION_PORTRAIT) {
+                // code for portrait mode
+                ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+            } else {
+                // code for landscape mode
+                Toast.makeText(this, "Land", Toast.LENGTH_SHORT).show()
+                ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+            }
+        }
+
+        val setting = playerView!!.findViewById<ImageView>(id.exo_track_selection_view)
+
+        //Settings button
+        setting.setOnClickListener {
+            showDialog()
+//            if (!isShowingTrackSelectionDialog
+//                && TrackSelectionDialog.willHaveContent(trackSelector)
+//            ) {
+//                isShowingTrackSelectionDialog = true
+//                val trackSelectionDialog = TrackSelectionDialog.createForTrackSelector(
+//                    trackSelector
+//                )  /* onDismissListener= */
+//                { dismissedDialog: DialogInterface? ->
+//                    isShowingTrackSelectionDialog = false
+//                }
+////                trackSelectionDialog.show(fragmentManager, null)
+//            }
+        }
+        //---------------------------------------------------------------------------------//
 
     }
 
@@ -140,7 +200,7 @@ class PlayerActivity : Activity(), Player.Listener, AnalyticsListener, AdEvent.A
         val mediaSourceFactory: MediaSourceFactory =
             DefaultMediaSourceFactory(mediaDataSourceFactory)
                 .setAdsLoaderProvider { adsLoader }
-                .setAdViewProvider(binding.playerView)
+                .setAdViewProvider(binding.exoPlayerView)
 
         val handler = Handler()
         val adaptiveTrackSelection = AdaptiveTrackSelection.Factory()
@@ -174,9 +234,9 @@ class PlayerActivity : Activity(), Player.Listener, AnalyticsListener, AdEvent.A
         exoPlayer.addAnalyticsListener(mEventLogger)
 
         exoPlayer.playWhenReady = true
-        binding.playerView.player = exoPlayer
+        binding.exoPlayerView.player = exoPlayer
         adsLoader?.setPlayer(exoPlayer)
-        binding.playerView.requestFocus()
+        binding.exoPlayerView.requestFocus()
     }
 
 
@@ -256,8 +316,8 @@ class PlayerActivity : Activity(), Player.Listener, AnalyticsListener, AdEvent.A
     }
 
     private fun populatePopupmenus() {
-        val v: View = this.layoutInflater.inflate(R.layout.custom_track_selection_dialog, null)
-        val lLayout: LinearLayout = v.findViewById(R.id.popup_element)
+        val v: View = this.layoutInflater.inflate(layout.custom_track_selection_dialog, null)
+        val lLayout: LinearLayout = v.findViewById(id.popup_element)
 
         for (i in formatList.indices) {
             val tv = TextView(this)

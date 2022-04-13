@@ -7,7 +7,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
-import com.hvdevs.playmedia.ui.PlayerActivity2
+import com.hvdevs.playmedia.PlayerActivity
 import com.hvdevs.playmedia.R
 
 class ExpandListAdapter(var context: Context, var expListView: ExpandableListView, var header: MutableList<String>, var body: MutableList<MutableList<String>>): BaseExpandableListAdapter() {
@@ -86,7 +86,7 @@ class ExpandListAdapter(var context: Context, var expListView: ExpandableListVie
         title.setOnClickListener {
             Toast.makeText(context, title.text.toString(), Toast.LENGTH_SHORT).show()
             //Podemos iniciar otro activity desde el adaptador
-            val intent = Intent(context, PlayerActivity2::class.java)
+            val intent = Intent(context, PlayerActivity::class.java)
 //            intent.putExtra("video", body[groupPosition][childPosition].image)
             context.startActivity(Intent(intent))
         }
