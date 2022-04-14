@@ -34,7 +34,7 @@
         app:surface_type="surface_view"
         app:use_controller="true"
         app:resize_mode="fixed_width"
-        app:controller_layout_id="@layout/ustom_controls"
+        app:controller_layout_id="@layout/custom_controls"
         app:show_buffering="when_playing">
 
         <ProgressBar

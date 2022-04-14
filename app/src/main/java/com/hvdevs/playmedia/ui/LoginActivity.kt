@@ -1,20 +1,20 @@
 package com.hvdevs.playmedia.ui
 
+import android.animation.ObjectAnimator
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
+import android.view.animation.DecelerateInterpolator
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.gms.tasks.Task
 import com.google.firebase.auth.AuthResult
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
+import com.hvdevs.playmedia.constructor.User
 import com.hvdevs.playmedia.databinding.ActivityLoginBinding
 import com.raqueveque.foodexample.Utilities
-import java.text.SimpleDateFormat
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 import java.util.*
 
 class LoginActivity : AppCompatActivity() {
@@ -24,7 +24,7 @@ class LoginActivity : AppCompatActivity() {
 
     private lateinit var db: DatabaseReference
 
-    private var type = ""
+    private var userData: User? = null
 
     @SuppressLint("SimpleDateFormat")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -61,7 +61,6 @@ class LoginActivity : AppCompatActivity() {
         Utilities.setupUI(binding.root, this)
 
         /**El usuario puede cambiar la hora y pasar por alto la comprobacion*/
-//
 //        //Usar la hora de servidor
 //        val simpleDateFormat = SimpleDateFormat("dd-MM-yyyy HH:mm:ss")
 //        val time = LocalDateTime.now()
@@ -82,38 +81,26 @@ class LoginActivity : AppCompatActivity() {
     private fun login(user: String, password: String){
         auth.signInWithEmailAndPassword(user, password)
             .addOnCompleteListener (this) { task: Task<AuthResult> ->
-
                 if (task.isSuccessful){
-                    Toast.makeText(this, "Login exitoso", Toast.LENGTH_SHORT).show()
+                    val intent = Intent(this, MainListActivity::class.java)
                     val uid = auth.currentUser?.uid
                     Log.d("FIREBASE", uid.toString())
-                    db = FirebaseDatabase.getInstance().getReference("users/$uid/type")
-                    db.addValueEventListener(object : ValueEventListener{
-                        override fun onDataChange(snapshot: DataSnapshot) {
-                            if (snapshot.exists()){
-                                for (ss in snapshot.children){
-                                    type = ss.value.toString()
-                                    Log.d("FIREBASE", type)
-                                }
-                            }
-                        }
-
-                        override fun onCancelled(error: DatabaseError) {
-                            TODO("Not yet implemented")
-                        }
-
-                    })
-//                    if (type == "0") Toast.makeText(this, "No tiene permisos para ingresar", Toast.LENGTH_SHORT).show()
-//                    if (type == "1") Toast.makeText(this, "Tiene tiempo de prueba", Toast.LENGTH_SHORT).show()
-//                    if (type == "2") {
-//                        Toast.makeText(this, "Hasta que expire su licencia", Toast.LENGTH_SHORT).show()
-                        startActivity(Intent(this, MainListActivity::class.java))
-//                    }
+                    db = FirebaseDatabase.getInstance().reference
+                    db.child("users").child(uid.toString()).get().addOnSuccessListener {
+                        userData = it.getValue(User::class.java)
+                        Log.d("FIREBASE", "Got value ${userData?.type}")
+                        intent.putExtra("type", userData?.type)
+                        intent.putExtra("time", userData?.time)
+                        intent.putExtra("expire", userData?.expire)
+                    }.addOnFailureListener {
+                        Log.e("FIREBASE", "Errorr getting data", it)
+                    }
+                    Toast.makeText(this, "Login exitoso", Toast.LENGTH_SHORT).show()
+//                    startActivity(intent)
                 } else {
                     val errorMsg = Objects.requireNonNull(task.exception)?.localizedMessage
                     Toast.makeText(this, errorMsg, Toast.LENGTH_SHORT).show()
                 }
             }
     }
-
 }

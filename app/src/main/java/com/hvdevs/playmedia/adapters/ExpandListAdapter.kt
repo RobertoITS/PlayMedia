@@ -10,6 +10,8 @@ import android.widget.*
 import com.hvdevs.playmedia.PlayerActivity
 import com.hvdevs.playmedia.R
 
+//Adaptador de prueba, descartado
+//Este funcionaba con el ingreso de 2 listas
 class ExpandListAdapter(var context: Context, var expListView: ExpandableListView, var header: MutableList<String>, var body: MutableList<MutableList<String>>): BaseExpandableListAdapter() {
 //El constructor solo pasaria la lista de grupo
     override fun getGroupCount(): Int {

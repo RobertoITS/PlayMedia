@@ -1,6 +1,5 @@
 package com.hvdevs.playmedia
 
-import android.R
 import android.app.Activity
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
@@ -66,18 +65,16 @@ class PlayerActivity : Activity(), Player.Listener, AnalyticsListener, AdEvent.A
     private val bitrateList: ArrayList<String> = ArrayList()
     private var qualityDialog: EasyDialog? = null
 
-    private val TAG = "TRACK_DETAILS"
+    private val tag = "TRACK_DETAILS"
 
     private val trackList = ArrayList<String>()
 
     private lateinit var drm: String
     private lateinit var uri: String
-    private lateinit var STREAM_URL_MPD: String
-    private lateinit var LICENCE_URL: String
+    private lateinit var streamUrl: String
+    private lateinit var licenceUrl: String
 
     //---------------------------------------------------------------------------------//
-    private var isShowingTrackSelectionDialog = false
-
     var playerView: PlayerView? = null
     var simpleExoPlayer: SimpleExoPlayer? = null
     //---------------------------------------------------------------------------------//
@@ -90,10 +87,10 @@ class PlayerActivity : Activity(), Player.Listener, AnalyticsListener, AdEvent.A
         drm = bundle?.getString("licence").toString()
         uri = bundle?.getString("uri").toString()
 
-        STREAM_URL_MPD = uri
+        streamUrl = uri
         Log.d("DRM", drm)
         Log.d("URL", uri)
-        LICENCE_URL = drm
+        licenceUrl = drm
 
 
         adsLoader = ImaAdsLoader.Builder(this)
@@ -104,17 +101,33 @@ class PlayerActivity : Activity(), Player.Listener, AnalyticsListener, AdEvent.A
         binding.detailBtn.setOnClickListener { showDialog() }
 
 
-
-
         //---------------------------------------------------------------------------------//
         trackSelector = DefaultTrackSelector(this)
         simpleExoPlayer = SimpleExoPlayer.Builder(this).setTrackSelector(trackSelector).build()
         playerView = binding.exoPlayerView
         playerView!!.player = simpleExoPlayer
-//        val mediaItem = MediaItem.fromUri(url1)
-//        simpleExoPlayer!!.addMediaItem(mediaItem)
-//        simpleExoPlayer!!.prepare()
-//        simpleExoPlayer!!.play()
+
+        //Instanciamos las vistas que estan llamadas desde el archivo layout donde se
+        //encuentra el exoPlayerView: app:controller_layout_id="@layout/custom_controls"
+
+        //Boton adelantar
+        val forwardBtn = playerView!!.findViewById<ImageView>(id.fwd)
+        forwardBtn.setOnClickListener {
+            simpleExoPlayer!!.seekTo(
+                simpleExoPlayer!!.currentPosition + 10000
+            )
+        }
+
+        //Boton rebobinar
+        val rewBtn = playerView!!.findViewById<ImageView>(id.rew)
+        rewBtn.setOnClickListener {
+            val num = simpleExoPlayer!!.currentPosition - 10000
+            if (num < 0) {
+                simpleExoPlayer!!.seekTo(0)
+            } else {
+                simpleExoPlayer!!.seekTo(simpleExoPlayer!!.currentPosition - 10000)
+            }
+        }
 
         //Fullscreen
         val fullscreenButton = playerView!!.findViewById<ImageView>(id.fullscreen)
@@ -131,29 +144,17 @@ class PlayerActivity : Activity(), Player.Listener, AnalyticsListener, AdEvent.A
             }
         }
 
-        val setting = playerView!!.findViewById<ImageView>(id.exo_track_selection_view)
-
         //Settings button
+        val setting = playerView!!.findViewById<ImageView>(id.exo_track_selection_view)
         setting.setOnClickListener {
             showDialog()
-//            if (!isShowingTrackSelectionDialog
-//                && TrackSelectionDialog.willHaveContent(trackSelector)
-//            ) {
-//                isShowingTrackSelectionDialog = true
-//                val trackSelectionDialog = TrackSelectionDialog.createForTrackSelector(
-//                    trackSelector
-//                )  /* onDismissListener= */
-//                { dismissedDialog: DialogInterface? ->
-//                    isShowingTrackSelectionDialog = false
-//                }
-////                trackSelectionDialog.show(fragmentManager, null)
-//            }
         }
         //---------------------------------------------------------------------------------//
 
     }
 
-
+    //Inicializamos es reproductor
+    //Las demas funciones viene predeterminadas en el repositorio clonado
     private fun initializePlayer() {
 
 //        val drmCallback = HttpMediaDrmCallback(LICENCE_URL, DefaultHttpDataSource.Factory())
@@ -167,7 +168,7 @@ class PlayerActivity : Activity(), Player.Listener, AnalyticsListener, AdEvent.A
 
         val drmConfig: MediaItem.DrmConfiguration =
             MediaItem.DrmConfiguration.Builder(C.WIDEVINE_UUID)
-                .setLicenseUri(LICENCE_URL)
+                .setLicenseUri(licenceUrl)
                 .build()
 
         val subtitle: MediaItem.SubtitleConfiguration =
@@ -182,7 +183,7 @@ class PlayerActivity : Activity(), Player.Listener, AnalyticsListener, AdEvent.A
                 .build()
 
         val mediaItem: MediaItem = MediaItem.Builder()
-            .setUri(Uri.parse(STREAM_URL_MPD))
+            .setUri(Uri.parse(streamUrl))
             .setDrmConfiguration(drmConfig)
             //.setAdsConfiguration(ads)
             .setSubtitleConfigurations(ImmutableList.of(subtitle))
@@ -237,8 +238,8 @@ class PlayerActivity : Activity(), Player.Listener, AnalyticsListener, AdEvent.A
         binding.exoPlayerView.player = exoPlayer
         adsLoader?.setPlayer(exoPlayer)
         binding.exoPlayerView.requestFocus()
+        exoPlayer.play()
     }
-
 
     private fun getTrackDetails() {
         trackList.clear()
@@ -257,10 +258,10 @@ class PlayerActivity : Activity(), Player.Listener, AnalyticsListener, AdEvent.A
             val trackType = mappedTrackInfo.getRendererType(rendererIndex)
             trackGroupArray = mappedTrackInfo.getTrackGroups(rendererIndex)
 
-            Log.d(TAG, "TRACK ITEM $rendererIndex")
-            Log.d(TAG, "TRACK_TYPE: " + trackTypeToName(trackType))
-            Log.d(TAG, "TRACK_TYPE_THIS: $trackNameProvider")
-            Log.d(TAG, "GROUP_ARRAY: " + Gson().toJson(trackGroupArray))
+            Log.d(tag, "TRACK ITEM $rendererIndex")
+            Log.d(tag, "TRACK_TYPE: " + trackTypeToName(trackType))
+            Log.d(tag, "TRACK_TYPE_THIS: $trackNameProvider")
+            Log.d(tag, "GROUP_ARRAY: " + Gson().toJson(trackGroupArray))
 
             for (groupIndex in 0 until trackGroupArray.length) {
 
@@ -269,7 +270,7 @@ class PlayerActivity : Activity(), Player.Listener, AnalyticsListener, AdEvent.A
                     val trackName = DefaultTrackNameProvider(resources).getTrackName(
                         trackGroupArray[groupIndex].getFormat(trackIndex))
 
-                    Log.d(TAG, "ITEM CODEC: $trackName")
+                    Log.d(tag, "ITEM CODEC: $trackName")
                     trackList.add(trackName)
                 }
             }
@@ -462,32 +463,41 @@ class PlayerActivity : Activity(), Player.Listener, AnalyticsListener, AdEvent.A
     }
 
     private fun releasePlayer() {
-        exoPlayer.release()
+        /***/
+        exoPlayer.playWhenReady = false
     }
 
+    //Cuando se construye la vista, se iniciliza el exoPlayer
     public override fun onStart() {
         super.onStart()
         if (Util.SDK_INT > 23) initializePlayer()
     }
 
+    //Cuando se resume la vista, se reproduce el exoPlayer
     public override fun onResume() {
         super.onResume()
-        if (Util.SDK_INT <= 23) initializePlayer()
+        if (Util.SDK_INT <= 23)
+            exoPlayer.playWhenReady = true
     }
 
+    //En estado de pausa de la vista, el exoPlayer queda en estado de pausa
     public override fun onPause() {
         super.onPause()
         if (Util.SDK_INT <= 23) releasePlayer()
     }
 
+    //En estado de stop de la vista, el exoPlayer queda en estado de pausa
     public override fun onStop() {
         super.onStop()
         if (Util.SDK_INT > 23) releasePlayer()
     }
 
+    //Cuando se destruye la vista, se destruye el reproductor exoPlayer
     override fun onDestroy() {
         super.onDestroy()
         adsLoader?.release()
+        //Se libera el reproductor
+        exoPlayer.release()
         Log.e("ADS_DESTROYED", "X")
     }
 
