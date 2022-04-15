@@ -29,7 +29,7 @@
         android:theme="@style/Theme.PlayMedia"
         tools:targetApi="n">
         <activity
-            android:name=".PlayerActivity"
+            android:name=".exoplayer2.PlayerActivity"
             android:exported="false"
             android:launchMode="singleTop"
             android:theme="@style/Theme.AppCompat"

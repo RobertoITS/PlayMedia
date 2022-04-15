@@ -79,4 +79,8 @@ dependencies {
 
     //Easy Dialog
     implementation 'com.github.michaelye.easydialog:easydialog:1.4'
+
+    //Coroutines
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.5.2'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.1.1'
 }

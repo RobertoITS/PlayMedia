@@ -1,4 +1,4 @@
-package com.hvdevs.playmedia
+package com.hvdevs.playmedia.exoplayer2
 
 import android.app.Activity
 import android.content.pm.ActivityInfo
@@ -75,17 +75,18 @@ class PlayerActivity : Activity(), Player.Listener, AnalyticsListener, AdEvent.A
     private lateinit var licenceUrl: String
 
     //---------------------------------------------------------------------------------//
-    var playerView: PlayerView? = null
-    var simpleExoPlayer: SimpleExoPlayer? = null
+    private var playerView: PlayerView? = null
+    private var simpleExoPlayer: SimpleExoPlayer? = null
     //---------------------------------------------------------------------------------//
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityPlayerBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
         val bundle: Bundle? = intent.extras
-        drm = bundle?.getString("licence").toString()
         uri = bundle?.getString("uri").toString()
+        drm = bundle?.getString("licence").toString()
 
         streamUrl = uri
         Log.d("DRM", drm)
@@ -152,6 +153,8 @@ class PlayerActivity : Activity(), Player.Listener, AnalyticsListener, AdEvent.A
         //---------------------------------------------------------------------------------//
 
     }
+
+
 
     //Inicializamos es reproductor
     //Las demas funciones viene predeterminadas en el repositorio clonado

@@ -5,6 +5,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.BaseExpandableListAdapter
+import android.widget.ExpandableListView
 import android.widget.ImageView
 import android.widget.TextView
 import com.hvdevs.playmedia.R
@@ -17,7 +18,7 @@ import com.squareup.picasso.Picasso
  * BaseExpandableListAdapter.
  * Para su funcionalidad, ingresa una lista de tipo constructor, con un constructor dentro (ParentModel)
  * */
-class HelperAdapter(var context: Context, var childList: ArrayList<ParentModel>): BaseExpandableListAdapter() {
+class HelperAdapter(var context: Context, var childList: ArrayList<ParentModel>, var expListView: ExpandableListView): BaseExpandableListAdapter() {
 
     //Obtenemos la cuenta del grupo principal
     override fun getGroupCount(): Int {
@@ -65,6 +66,19 @@ class HelperAdapter(var context: Context, var childList: ArrayList<ParentModel>)
         }
         val tv: TextView = currentView!!.findViewById(R.id.tv_title)
         tv.text = parentInfo.name //Pasamos los datos obtenidos de las listas (parent)
+
+        //Este listener lo tocamos de aca para que consiga el tamaño de la lista parent
+        //El escuchador del click
+        tv.setOnClickListener {
+            //Aqui colapsamos todas las listas
+            for (i in 0 .. childList.size){
+                //Exepto la que esta tocada
+                if (i != parentPosition) expListView.collapseGroup(i)
+            }
+            //Aqui controlamos el expand y collapse
+            if (expListView.isGroupExpanded(parentPosition)) expListView.collapseGroup(parentPosition)
+            else expListView.expandGroup(parentPosition)
+        }
         return currentView
     }
 

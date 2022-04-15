@@ -1,11 +1,11 @@
 package com.hvdevs.playmedia.ui
 
-import android.animation.ObjectAnimator
 import android.annotation.SuppressLint
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
 import android.util.Log
-import android.view.animation.DecelerateInterpolator
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.gms.tasks.Task
@@ -15,8 +15,11 @@ import com.google.firebase.database.*
 import com.hvdevs.playmedia.constructor.User
 import com.hvdevs.playmedia.databinding.ActivityLoginBinding
 import com.raqueveque.foodexample.Utilities
+import kotlinx.coroutines.*
+import kotlinx.coroutines.tasks.await
 import java.util.*
 
+@OptIn(DelicateCoroutinesApi::class)
 class LoginActivity : AppCompatActivity() {
     private lateinit var binding: ActivityLoginBinding
 
@@ -25,6 +28,8 @@ class LoginActivity : AppCompatActivity() {
     private lateinit var db: DatabaseReference
 
     private var userData: User? = null
+
+    private lateinit var uid: String
 
     @SuppressLint("SimpleDateFormat")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -82,21 +87,12 @@ class LoginActivity : AppCompatActivity() {
         auth.signInWithEmailAndPassword(user, password)
             .addOnCompleteListener (this) { task: Task<AuthResult> ->
                 if (task.isSuccessful){
+                    uid = auth.currentUser?.uid.toString()
+                    Log.d("FIREBASE", uid)
                     val intent = Intent(this, MainListActivity::class.java)
-                    val uid = auth.currentUser?.uid
-                    Log.d("FIREBASE", uid.toString())
-                    db = FirebaseDatabase.getInstance().reference
-                    db.child("users").child(uid.toString()).get().addOnSuccessListener {
-                        userData = it.getValue(User::class.java)
-                        Log.d("FIREBASE", "Got value ${userData?.type}")
-                        intent.putExtra("type", userData?.type)
-                        intent.putExtra("time", userData?.time)
-                        intent.putExtra("expire", userData?.expire)
-                    }.addOnFailureListener {
-                        Log.e("FIREBASE", "Errorr getting data", it)
-                    }
+                    intent.putExtra("uid", uid)
+                    startActivity(intent)
                     Toast.makeText(this, "Login exitoso", Toast.LENGTH_SHORT).show()
-//                    startActivity(intent)
                 } else {
                     val errorMsg = Objects.requireNonNull(task.exception)?.localizedMessage
                     Toast.makeText(this, errorMsg, Toast.LENGTH_SHORT).show()

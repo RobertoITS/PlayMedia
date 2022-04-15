@@ -7,7 +7,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
-import com.hvdevs.playmedia.PlayerActivity
+import com.hvdevs.playmedia.exoplayer2.PlayerActivity
 import com.hvdevs.playmedia.R
 
 //Adaptador de prueba, descartado

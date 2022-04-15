@@ -6,7 +6,7 @@ import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
 import com.google.firebase.database.*
-import com.hvdevs.playmedia.PlayerActivity
+import com.hvdevs.playmedia.exoplayer2.PlayerActivity
 import com.hvdevs.playmedia.adapters.HelperAdapter
 import com.hvdevs.playmedia.constructor.ChildModel
 import com.hvdevs.playmedia.constructor.ParentModel
@@ -17,43 +17,52 @@ import java.time.format.DateTimeFormatter
 
 class MainListActivity : AppCompatActivity() {
 
-    private lateinit var binding: ActivityMainListViewBinding
+    private lateinit var binding: ActivityMainListViewBinding //El viewBinding
 
-    private lateinit var dbParent: DatabaseReference
-    private lateinit var dbChild: DatabaseReference
+    private lateinit var dbParent: DatabaseReference //Referencia a la bd del parent
+    private lateinit var dbChild: DatabaseReference //Refecencia a la bd de los child
 
-    private var parentItem:LinkedHashMap<String, ParentModel> = LinkedHashMap()
-    private var itemList: ArrayList<ParentModel> = arrayListOf()
-    private lateinit var helperAdapter: HelperAdapter
+    private var parentItem:LinkedHashMap<String, ParentModel> = LinkedHashMap() //Lista del parent - child
+    private var itemList: ArrayList<ParentModel> = arrayListOf() //Lista solo del parent
+    private lateinit var helperAdapter: HelperAdapter //El adaptador del expandedListView
+
+    private lateinit var dbUser: DatabaseReference //Referencia a la bd del usuario
+    private var userData: User? = null //El objeto del usuario
+    private lateinit var uid: String //Uid del usuario
 
     override fun onCreate(savedInstanceState: Bundle?) {
         binding = ActivityMainListViewBinding.inflate(layoutInflater)
         super.onCreate(savedInstanceState)
         setContentView(binding.root)
 
-        val userTime = intent.extras?.getLong("time")
-        val userExpire = intent.extras?.getString("time")
-        val userType = intent.extras?.getInt("type")
+        //Obtenemos el bundle de la actividad anterior
+        val bundle: Bundle? = intent.extras
+        uid = bundle?.getString("uid").toString()
 
-        Log.d("USER", userTime.toString() + userExpire.toString() + userType.toString())
+        //Obtenemos los datos del usuario
+        getUserData(uid)
 
-        val date = LocalDate.parse(userExpire, DateTimeFormatter.ofPattern("dd/MM/yyyy"))
-        Log.d("TIME", date.toString())
-        Toast.makeText(this, date.toString(), Toast.LENGTH_SHORT).show()
+        Log.d("USER", userData?.time.toString() + userData?.expire.toString() + userData?.type.toString())
 
+        //Obtenemos los datos de la lista principal
         getParentData()
 
+        //El click listener de los child en la lista principal
         binding.mainList.setOnChildClickListener { expandableListView, view, parentPosition, childPosition, long ->
             val parentInfo = itemList[parentPosition]
             val childInfo = parentInfo.itemList[childPosition]
-            Toast.makeText(baseContext, childInfo.name, Toast.LENGTH_SHORT).show()
+//            Toast.makeText(baseContext, childInfo.name, Toast.LENGTH_SHORT).show()
             val intent = Intent(this, PlayerActivity::class.java)
+            //Pasamos la licencia y la uri para el reproductor
             intent.putExtra("licence", childInfo.drm_license_url)
             intent.putExtra("uri", childInfo.uri)
-            when (userType) {
+
+            //Comparamos las condiciones del usuario
+            //En este caso el tipo de usuario
+            when (userData?.type) {
                 0 -> { Toast.makeText(this, "No tiene acceso a este contenido", Toast.LENGTH_SHORT).show() }
                 1 -> {
-                    if (userTime == 0L){
+                    if (userData?.time == 0L){
                         Toast.makeText(this, "Su tiempo de prueba expiro", Toast.LENGTH_SHORT).show()
                     } else{
                         Toast.makeText(this, "Contenido de prueba", Toast.LENGTH_SHORT).show()
@@ -61,17 +70,40 @@ class MainListActivity : AppCompatActivity() {
                     }
                 }
                 2 -> {
-                    Toast.makeText(this, "Su licencia expira el $userExpire", Toast.LENGTH_SHORT).show()
-                    startActivity(intent)
+                    //Formateador de las fechas por patron
+                    val formatter: DateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
+                    //Parseamos la fecha obtenida de la db
+                    val serverDate = LocalDate.parse(userData?.expire.toString(), DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+                    //La formateamos
+                    val serverDateFormatted = formatter.format(serverDate)
+                    //Obtenemos la fecha del dispositivo (local)
+                    val localDate = LocalDate.now()
+                    //La formateamos
+                    val localDateFormatted = formatter.format(localDate)
+                    //Si la fecha es mayor, reproduce el contenido
+                    if (serverDateFormatted < localDateFormatted){
+                        Toast.makeText(this, "Su licencia expira el $serverDateFormatted", Toast.LENGTH_SHORT).show()
+                        startActivity(intent)
+                    //Caso contrario, no lo reproduce
+                    } else {
+                        Toast.makeText(this, "Su licencia expiró", Toast.LENGTH_SHORT).show()
+                    }
+                    Log.d("TIME", "$serverDateFormatted - - $localDateFormatted")
+
                 }
             }
             false
         }
+    }
 
-        binding.mainList.setOnGroupClickListener { expandableListView, view, parentPosition, long ->
-            val parentInfo = itemList[parentPosition]
-            Toast.makeText(baseContext, parentInfo.name, Toast.LENGTH_SHORT).show()
-            false
+    //Obtenemos los datos del usuario
+    private fun getUserData(uid: String) {
+        dbUser = FirebaseDatabase.getInstance().reference
+        dbUser.child("users").child(uid).get().addOnSuccessListener {
+            userData = it.getValue(User::class.java)
+            Log.d("FIREBASE", "Got value ${userData?.type}")
+        }.addOnFailureListener {
+            Log.e("FIREBASE", "Errorr getting data", it)
         }
     }
 
@@ -104,6 +136,7 @@ class MainListActivity : AppCompatActivity() {
         })
     }
 
+    //Obtenemos los datos de los child
     private fun getChildData(parent: String, j: Int) {
         //Instanciamos la base de datos y aqui es donde funciona el contador anterior
         dbChild = FirebaseDatabase.getInstance().getReference("channels/$j/samples")
@@ -117,7 +150,7 @@ class MainListActivity : AppCompatActivity() {
                         addItem(parent, child!!)
 
                         //Le pasamos los datos al adaptador
-                        helperAdapter = HelperAdapter(this@MainListActivity, itemList)
+                        helperAdapter = HelperAdapter(this@MainListActivity, itemList, binding.mainList)
                         //Notificamos los cambios
                         helperAdapter.notifyDataSetChanged()
                         //Le instanciamos el adaptador al listView
