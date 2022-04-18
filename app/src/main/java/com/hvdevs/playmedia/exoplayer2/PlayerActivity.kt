@@ -1,16 +1,17 @@
 package com.hvdevs.playmedia.exoplayer2
 
+import android.annotation.SuppressLint
 import android.app.Activity
+import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
+import android.os.CountDownTimer
 import android.os.Handler
 import android.util.Log
-import android.view.Gravity
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -40,11 +41,15 @@ import com.google.android.exoplayer2.util.MimeTypes
 import com.google.android.exoplayer2.util.Util
 import com.google.android.exoplayer2.video.VideoSize
 import com.google.common.collect.ImmutableList
+import com.google.firebase.database.ktx.database
+import com.google.firebase.ktx.Firebase
 import com.google.gson.Gson
 import com.hvdevs.playmedia.R.*
 import com.hvdevs.playmedia.databinding.ActivityPlayerBinding
+import com.hvdevs.playmedia.ui.MainListActivity
 import com.michael.easydialog.EasyDialog
 import kotlin.math.roundToInt
+import kotlin.properties.Delegates
 
 
 class PlayerActivity : Activity(), Player.Listener, AnalyticsListener, AdEvent.AdEventListener,
@@ -53,31 +58,33 @@ class PlayerActivity : Activity(), Player.Listener, AnalyticsListener, AdEvent.A
     private lateinit var exoPlayer: ExoPlayer
     private lateinit var binding : ActivityPlayerBinding
     private lateinit var trackSelector: DefaultTrackSelector
-    private lateinit var trackSelectorParameters: DefaultTrackSelector.ParametersBuilder
-    private lateinit var trackGroupArray: TrackGroupArray
 
     private var adsLoader: ImaAdsLoader? = null
-    private var adPlaybackState: AdPlaybackState? = null
     private var adsManager: AdsManager? = null
-    private var videoProgressUpdate: VideoProgressUpdate? = null
 
     private val formatList: ArrayList<String> = ArrayList()
     private val bitrateList: ArrayList<String> = ArrayList()
-    private var qualityDialog: EasyDialog? = null
 
-    private val tag = "TRACK_DETAILS"
-
-    private val trackList = ArrayList<String>()
-
-    private lateinit var drm: String
-    private lateinit var uri: String
-    private lateinit var streamUrl: String
-    private lateinit var licenceUrl: String
+    private lateinit var drm: String //Variable que obtiene el drm que se pasa de la actividad anterior
+    private lateinit var uri: String //Variable que obtiene la uri que se pasa de la actividad anterior
+    private var time by Delegates.notNull<Long>() //Variable que obtiene el tiempo que se pasa de la actividad anterior
+    private var testContent by Delegates.notNull<Boolean>() //Variable que obtiene el tipo de contenido que se pasa de la actividad anterior
+    private lateinit var uid: String //Variable que obtiene la uid que se pasa de la actividad anterior
+    private lateinit var streamUrl: String //Variable para pasar los datos al reproductor
+    private lateinit var licenceUrl: String //Variable para pasar los datos al reproductor
 
     //---------------------------------------------------------------------------------//
     private var playerView: PlayerView? = null
     private var simpleExoPlayer: SimpleExoPlayer? = null
     //---------------------------------------------------------------------------------//
+
+    private lateinit var countDownTimer: CountDownTimer //El contador del reproductor, en caso de modo de prueba
+    var total: Long = 0
+
+    private val database = Firebase.database //Instancias a la base de datos
+    val myRef = database.getReference("users")
+
+    private val waitUI = Handler() //Instanciamos el handler para el tiempo de espera
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -87,6 +94,10 @@ class PlayerActivity : Activity(), Player.Listener, AnalyticsListener, AdEvent.A
         val bundle: Bundle? = intent.extras
         uri = bundle?.getString("uri").toString()
         drm = bundle?.getString("licence").toString()
+        uid = bundle?.getString("uid").toString()
+        time = bundle!!.getLong("time")
+        Log.d("TIMETEST", time.toString())
+        testContent = bundle.getBoolean("testContent")
 
         streamUrl = uri
         Log.d("DRM", drm)
@@ -150,21 +161,56 @@ class PlayerActivity : Activity(), Player.Listener, AnalyticsListener, AdEvent.A
         setting.setOnClickListener {
             showDialog()
         }
+
+        //Back button
+        val back = playerView!!.findViewById<ImageView>(id.exo_back)
+        back.setOnClickListener {
+            exoPlayer.release()
+            finish()
+        }
         //---------------------------------------------------------------------------------//
 
+        //Captamos el cambio de visibilidad del UI del sistema
+        //Le pasamos un handler para que se oculte a los 3 segundos de espera
+        window.decorView.setOnSystemUiVisibilityChangeListener { visibility ->
+            if (visibility and View.SYSTEM_UI_FLAG_FULLSCREEN == 0){
+                waitUI.postDelayed(wait, 3000)
+            }
+        }
     }
 
+    //Creamos la variable de tipo runnable para parar el tiempo,
+    //con la funcionalidad a realizarse
+    private val wait = Runnable {
+        hideSystemUI()
+    }
 
+    //Escondemos la barra de estado y de navegacion
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus) hideSystemUI()
+    }
+
+    //Con esta funcion logramos esconder la barra de estado y navegacion
+    //Sacado de la pagina oficial de Android Studio
+    private fun hideSystemUI() {
+        // Enables regular immersive mode.
+        // For "lean back" mode, remove SYSTEM_UI_FLAG_IMMERSIVE.
+        // Or for "sticky immersive," replace it with SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+        window.decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_IMMERSIVE
+                // Set the content to appear under the system bars so that the
+                // content doesn't resize when the system bars hide and show.
+                or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                // Hide the nav bar and status bar
+                or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                or View.SYSTEM_UI_FLAG_FULLSCREEN)
+    }
 
     //Inicializamos es reproductor
     //Las demas funciones viene predeterminadas en el repositorio clonado
     private fun initializePlayer() {
-
-//        val drmCallback = HttpMediaDrmCallback(LICENCE_URL, DefaultHttpDataSource.Factory())
-//
-//        val drmSessionManager = DefaultDrmSessionManager.Builder()
-//            .setMultiSession(false)
-//            .build(drmCallback)
 
         val mediaDataSourceFactory: DataSource.Factory =
             DefaultDataSource.Factory(this)
@@ -181,25 +227,11 @@ class PlayerActivity : Activity(), Player.Listener, AnalyticsListener, AdEvent.A
                 .setSelectionFlags(C.SELECTION_FLAG_AUTOSELECT)
                 .build()
 
-        val ads: MediaItem.AdsConfiguration =
-            MediaItem.AdsConfiguration.Builder(Uri.parse(VMAP_PODS))
-                .build()
-
         val mediaItem: MediaItem = MediaItem.Builder()
             .setUri(Uri.parse(streamUrl))
             .setDrmConfiguration(drmConfig)
-            //.setAdsConfiguration(ads)
             .setSubtitleConfigurations(ImmutableList.of(subtitle))
             .build()
-
-//        val mediaSource =
-//            HlsMediaSource.Factory(DefaultHttpDataSource.Factory())
-//                .createMediaSource(MediaItem.fromUri(STREAM_M3U8_SUB))
-
-        val mediaSource =
-            DashMediaSource.Factory(mediaDataSourceFactory)
-                //.setDrmSessionManager(drmSessionManager)
-                .createMediaSource(mediaItem)
 
         val mediaSourceFactory: MediaSourceFactory =
             DefaultMediaSourceFactory(mediaDataSourceFactory)
@@ -213,14 +245,8 @@ class PlayerActivity : Activity(), Player.Listener, AnalyticsListener, AdEvent.A
         val bandwidthMeter = DefaultBandwidthMeter.Builder(this).build()
 
         bandwidthMeter.addEventListener(handler) { elapsedMs, bytesTransferred, _ ->
-            //Log.d(TAG, "Bitrate (Mbps) = " + ((bytesTransferred * 8).toDouble() / (elapsedMs / 1000)) / 1000)
             binding.textView.text = (((bytesTransferred * 8).toDouble() / (elapsedMs / 1000)) / 1000).toString()
         }
-
-        //bandwidthMeter.bitrateEstimate
-        //val params = trackSelectorParameters.setAllowVideoNonSeamlessAdaptiveness(true).build()
-        //trackSelector.parameters = params
-
 
         exoPlayer = ExoPlayer.Builder(this)
             .setMediaSourceFactory(mediaSourceFactory)
@@ -230,7 +256,6 @@ class PlayerActivity : Activity(), Player.Listener, AnalyticsListener, AdEvent.A
             .setSeekBackIncrementMs(10000)
             .build()
 
-        //exoPlayer.addMediaSource(mediaSource)
         exoPlayer.addMediaItem(mediaItem)
         exoPlayer.addListener(this)
 
@@ -242,42 +267,6 @@ class PlayerActivity : Activity(), Player.Listener, AnalyticsListener, AdEvent.A
         adsLoader?.setPlayer(exoPlayer)
         binding.exoPlayerView.requestFocus()
         exoPlayer.play()
-    }
-
-    private fun getTrackDetails() {
-        trackList.clear()
-        val rendererInd = 0
-        val mappedTrackInfo = Assertions.checkNotNull(trackSelector.currentMappedTrackInfo)
-
-        val format: Format? = exoPlayer.videoFormat
-        val trackNameProvider: TrackNameProvider = DefaultTrackNameProvider(resources)
-        if (format != null) {
-//            Log.e("VIDEO_BITRATE", trackNameProvider.getTrackName(format))
-//            Log.e("TRACK_INDEX", format.id.toString())
-        }
-
-        for (rendererIndex in 0 until mappedTrackInfo.rendererCount) {
-
-            val trackType = mappedTrackInfo.getRendererType(rendererIndex)
-            trackGroupArray = mappedTrackInfo.getTrackGroups(rendererIndex)
-
-            Log.d(tag, "TRACK ITEM $rendererIndex")
-            Log.d(tag, "TRACK_TYPE: " + trackTypeToName(trackType))
-            Log.d(tag, "TRACK_TYPE_THIS: $trackNameProvider")
-            Log.d(tag, "GROUP_ARRAY: " + Gson().toJson(trackGroupArray))
-
-            for (groupIndex in 0 until trackGroupArray.length) {
-
-                for (trackIndex in 0 until trackGroupArray[groupIndex].length) {
-
-                    val trackName = DefaultTrackNameProvider(resources).getTrackName(
-                        trackGroupArray[groupIndex].getFormat(trackIndex))
-
-                    Log.d(tag, "ITEM CODEC: $trackName")
-                    trackList.add(trackName)
-                }
-            }
-        }
     }
 
     private fun showDialog() {
@@ -319,78 +308,7 @@ class PlayerActivity : Activity(), Player.Listener, AnalyticsListener, AdEvent.A
         }
     }
 
-    private fun populatePopupmenus() {
-        val v: View = this.layoutInflater.inflate(layout.custom_track_selection_dialog, null)
-        val lLayout: LinearLayout = v.findViewById(id.popup_element)
-
-        for (i in formatList.indices) {
-            val tv = TextView(this)
-            tv.text = formatList[i]
-            tv.id = i
-            tv.setTextColor(Color.WHITE)
-            tv.gravity = Gravity.CENTER
-            tv.setPadding(0, 5, 0, 5)
-            tv.textSize = 18f
-            tv.setOnClickListener {
-
-                val id = tv.id
-                if (id == 0) {
-                    changeQuality(bitrateList[id].toDouble() * 1000000)
-                }
-                if (id == 1) {
-                    changeQuality(bitrateList[id].toDouble() * 1000000)
-                }
-                if (id == 2) {
-                    changeQuality(bitrateList[id].toDouble() * 1000000)
-                }
-                if (id == 3) {
-                    changeQuality(bitrateList[id].toDouble() * 1000000)
-                }
-                if (id == 4) {
-                    changeQuality(bitrateList[id].toDouble() * 1000000)
-                }
-            }
-            if (tv.parent != null) {
-                (tv.parent as ViewGroup).removeView(tv)
-            }
-            lLayout.addView(tv)
-        }
-
-        qualityDialog =
-            EasyDialog(this@PlayerActivity)
-                .setLayout(v)
-                .setLocationByAttachedView(v)
-                .setGravity(EasyDialog.GRAVITY_BOTTOM)
-                .setTouchOutsideDismiss(true)
-                .setMatchParent(false)
-                .show()
-    }
-
-
-    private fun changeQuality(bitrate: Double) {
-        Log.e("RECEIVED_BITRATE", bitrate.toString())
-        val trackSelectorParameters = DefaultTrackSelector.ParametersBuilder(this)
-            .setMaxVideoBitrate(bitrate.roundToInt())
-            .build()
-
-        trackSelector.parameters = trackSelectorParameters
-        qualityDialog?.dismiss()
-    }
-
-
-    private fun trackTypeToName(trackType: Int): String {
-        return when (trackType) {
-            C.TRACK_TYPE_VIDEO -> "TRACK_TYPE_VIDEO"
-            C.TRACK_TYPE_AUDIO -> "TRACK_TYPE_AUDIO"
-            C.TRACK_TYPE_TEXT -> "TRACK_TYPE_TEXT"
-            else -> "Invalid track type"
-        }
-    }
-
     override fun onAdEvent(p0: AdEvent?) {
-        //Log.e("AD_EVENT", p0.toString())
-        //Log.e("AD_EVENT_ad", p0?.ad?.title.toString())
-        //adsManager.adCuePoints
         Log.e("AD_POD_POS", p0?.ad?.adPodInfo?.adPosition.toString())
         Log.e("AD_POD_TOTAL", p0?.ad?.adPodInfo?.totalAds.toString())
         Log.e("AD_POD_INDEX", p0?.ad?.adPodInfo?.podIndex.toString())
@@ -473,7 +391,37 @@ class PlayerActivity : Activity(), Player.Listener, AnalyticsListener, AdEvent.A
     //Cuando se construye la vista, se iniciliza el exoPlayer
     public override fun onStart() {
         super.onStart()
-        if (Util.SDK_INT > 23) initializePlayer()
+        if (Util.SDK_INT > 23)
+            //Pasamos el comprobador de tiempo de prueba, si es true,
+            //comienza el contador a ir hacia atras
+            if (testContent){
+                Log.d("TIMETEST", time.toString())
+                countDownTimer = object : CountDownTimer(time, 1000) {
+                    @SuppressLint("SetTextI18n")
+                    override fun onTick(millisUntilFinished: Long) {
+                        //Lo pasamos a formato hora
+                        val seconds = (millisUntilFinished / 1000).toInt() % 60
+                        val minutes = (millisUntilFinished / (1000 * 60) % 60).toInt()
+                        val hours = (millisUntilFinished / (1000 * 60 * 60) % 24).toInt()
+                        val newtime = "$hours:$minutes:$seconds"
+                        total = millisUntilFinished / 1000
+                        Log.d("TIMETEST", millisUntilFinished.toString())
+                        binding.testContent.visibility = View.VISIBLE
+                        binding.testContent.text = "seconds remaining: $newtime"
+                        //Vamos refrescando la hora en la base de datos en tiempo real
+                        myRef.child("$uid/time").setValue(millisUntilFinished)
+                    }
+
+                    @SuppressLint("SetTextI18n")
+                    override fun onFinish() {
+                        Toast.makeText(this@PlayerActivity, "Su tiempo de prueba expiro", Toast.LENGTH_SHORT).show()
+                        finish()
+                    }
+                }.start()
+                initializePlayer()
+            } else {
+                initializePlayer()
+            }
     }
 
     //Cuando se resume la vista, se reproduce el exoPlayer
@@ -502,19 +450,15 @@ class PlayerActivity : Activity(), Player.Listener, AnalyticsListener, AdEvent.A
         //Se libera el reproductor
         exoPlayer.release()
         Log.e("ADS_DESTROYED", "X")
+        if (testContent) countDownTimer.cancel()
+    }
+
+    override fun onBackPressed() {
+        if (testContent) countDownTimer.cancel()
+        super.onBackPressed()
     }
 
     companion object {
-        const val STREAM_M3U8_SUB = "https://bitdash-a.akamaihd.net/content/sintel/hls/playlist.m3u8"
-        //Variable que maneja la uri
-//        const val STREAM_URL_MPD = uri
-        const val STREAM_WEBVTT_MPD = "https://chromecast.cvattv.com.ar/live/c3eds/AmericaTV/SA_Live_dash_enc_2A/AmericaTV.mpd"
-        const val STREAM_CLEAR_DASH = "https://storage.googleapis.com/wvmedia/clear/h264/tears/tears.mpd"
-//        const val LICENCE_URL = "https://wv-client.cvattv.com.ar/?deviceId=Y2MzZWViN2QwNDZjNjZkZTQyNmE4NmE1ZGMxY2JmNWY="
         const val SUBS = "https://bitdash-a.akamaihd.net/content/sintel/hls/subtitles_en.vtt"
-
-        const val ADS_URL = "https://pubads.g.doubleclick.net/gampad/ads?sz=640x480&iu=/124319096/external/single_ad_samples&ciu_szs=300x250&impl=s&gdfp_req=1&env=vp&output=vast&unviewed_position_start=1&cust_params=deployment%3Ddevsite%26sample_ct%3Dlinear&correlator="
-        const val VMAP_PODS = "https://pubads.g.doubleclick.net/gampad/ads?sz=640x480&iu=/124319096/external/ad_rule_samples&ciu_szs=300x250&ad_rule=1&impl=s&gdfp_req=1&env=vp&output=vmap&unviewed_position_start=1&cust_params=deployment%3Ddevsite%26sample_ar%3Dpremidpostpod&cmsid=496&vid=short_onecue&correlator="
-        const val STOCK_AD = "https://storage.googleapis.com/gvabox/media/samples/stock.mp4"
     }
 }

@@ -18,7 +18,7 @@ import com.squareup.picasso.Picasso
  * BaseExpandableListAdapter.
  * Para su funcionalidad, ingresa una lista de tipo constructor, con un constructor dentro (ParentModel)
  * */
-class HelperAdapter(var context: Context, var childList: ArrayList<ParentModel>, var expListView: ExpandableListView): BaseExpandableListAdapter() {
+class ExpandedListAdapter(var context: Context, var childList: ArrayList<ParentModel>, var expListView: ExpandableListView): BaseExpandableListAdapter() {
 
     //Obtenemos la cuenta del grupo principal
     override fun getGroupCount(): Int {

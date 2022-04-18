@@ -1,13 +1,24 @@
 package com.hvdevs.playmedia.ui
 
+import android.annotation.SuppressLint
+import android.content.Context
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.os.CountDownTimer
 import android.util.Log
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.TextView
 import android.widget.Toast
+import androidx.fragment.app.Fragment
 import com.google.firebase.database.*
+import com.google.firebase.database.ktx.database
+import com.google.firebase.ktx.Firebase
+import com.hvdevs.playmedia.R
 import com.hvdevs.playmedia.exoplayer2.PlayerActivity
-import com.hvdevs.playmedia.adapters.HelperAdapter
+import com.hvdevs.playmedia.adapters.ExpandedListAdapter
 import com.hvdevs.playmedia.constructor.ChildModel
 import com.hvdevs.playmedia.constructor.ParentModel
 import com.hvdevs.playmedia.constructor.User
@@ -24,11 +35,12 @@ class MainListActivity : AppCompatActivity() {
 
     private var parentItem:LinkedHashMap<String, ParentModel> = LinkedHashMap() //Lista del parent - child
     private var itemList: ArrayList<ParentModel> = arrayListOf() //Lista solo del parent
-    private lateinit var helperAdapter: HelperAdapter //El adaptador del expandedListView
+    private lateinit var expandedListAdapter: ExpandedListAdapter //El adaptador del expandedListView
 
     private lateinit var dbUser: DatabaseReference //Referencia a la bd del usuario
     private var userData: User? = null //El objeto del usuario
     private lateinit var uid: String //Uid del usuario
+    private var testContent = false //Controla el contenido de prueba
 
     override fun onCreate(savedInstanceState: Bundle?) {
         binding = ActivityMainListViewBinding.inflate(layoutInflater)
@@ -42,8 +54,6 @@ class MainListActivity : AppCompatActivity() {
         //Obtenemos los datos del usuario
         getUserData(uid)
 
-        Log.d("USER", userData?.time.toString() + userData?.expire.toString() + userData?.type.toString())
-
         //Obtenemos los datos de la lista principal
         getParentData()
 
@@ -56,16 +66,23 @@ class MainListActivity : AppCompatActivity() {
             //Pasamos la licencia y la uri para el reproductor
             intent.putExtra("licence", childInfo.drm_license_url)
             intent.putExtra("uri", childInfo.uri)
+            intent.putExtra("uid", uid)
 
             //Comparamos las condiciones del usuario
             //En este caso el tipo de usuario
             when (userData?.type) {
                 0 -> { Toast.makeText(this, "No tiene acceso a este contenido", Toast.LENGTH_SHORT).show() }
                 1 -> {
-                    if (userData?.time == 0L){
+                    if (userData?.time!! < 2000){
                         Toast.makeText(this, "Su tiempo de prueba expiro", Toast.LENGTH_SHORT).show()
                     } else{
+                        testContent = true
                         Toast.makeText(this, "Contenido de prueba", Toast.LENGTH_SHORT).show()
+                        Log.d("TEST", userData?.time.toString())
+                        //Pasamos el tiempo restante de prueba
+                        intent.putExtra("time", userData?.time)
+                        //pasamos que es contenido de prueba
+                        intent.putExtra("testContent", testContent)
                         startActivity(intent)
                     }
                 }
@@ -83,17 +100,41 @@ class MainListActivity : AppCompatActivity() {
                     //Si la fecha es mayor, reproduce el contenido
                     if (serverDateFormatted < localDateFormatted){
                         Toast.makeText(this, "Su licencia expira el $serverDateFormatted", Toast.LENGTH_SHORT).show()
+                        //Pasamos si es contenido de prueba o no
+                        intent.putExtra("testContent", testContent)
                         startActivity(intent)
                     //Caso contrario, no lo reproduce
                     } else {
                         Toast.makeText(this, "Su licencia expiró", Toast.LENGTH_SHORT).show()
                     }
-                    Log.d("TIME", "$serverDateFormatted - - $localDateFormatted")
-
                 }
             }
             false
         }
+
+        // boton LogOt, agrego una escucha al click
+
+        binding.btnLogOut.setOnClickListener { logOut() }
+
+    }
+
+    // creo la funcion logOut y llamo a la shared preferences creado en LoginActivity
+    // si el usuario clickea en el cierre de sesion, se dirige a la pantalla de Login y cambia es estado del login, pasa de estar activo a inactivo.
+
+    private fun logOut() {
+
+        val sp = getSharedPreferences("my_prefs", Context.MODE_PRIVATE)
+
+        with(sp.edit()){
+
+            putString("active","false")
+            apply()
+        }
+
+        //paso a la actividad Login, y termino esta actividad.
+
+        startActivity(Intent(this,LoginActivity::class.java))
+        finish()
     }
 
     //Obtenemos los datos del usuario
@@ -101,7 +142,7 @@ class MainListActivity : AppCompatActivity() {
         dbUser = FirebaseDatabase.getInstance().reference
         dbUser.child("users").child(uid).get().addOnSuccessListener {
             userData = it.getValue(User::class.java)
-            Log.d("FIREBASE", "Got value ${userData?.type}")
+            Log.d("FIREBASE", "Got value ${userData?.time}")
         }.addOnFailureListener {
             Log.e("FIREBASE", "Errorr getting data", it)
         }
@@ -119,7 +160,6 @@ class MainListActivity : AppCompatActivity() {
                 if (snapshot.exists()){
                     for (parentSnapshot in snapshot.children){
                         val parent: String = parentSnapshot.child("name").value.toString()
-                        Log.d("FIREBASE", parent)
                         //Una vez que obtenemos el parent, buscamos los child que le corresponden
                         //Pasamos el contador
                         getChildData(parent, j)
@@ -145,24 +185,20 @@ class MainListActivity : AppCompatActivity() {
                 if (snapshot.exists()){
                     for (childSnapshot in snapshot.children){
                         val child = childSnapshot.getValue(ChildModel::class.java)
-                        Log.d("FIREBASE/CHILD", child?.name.toString())
                         //Pasamos los datos del parent y sus child (uno en uno, en este caso)
                         addItem(parent, child!!)
-
                         //Le pasamos los datos al adaptador
-                        helperAdapter = HelperAdapter(this@MainListActivity, itemList, binding.mainList)
+                        expandedListAdapter = ExpandedListAdapter(this@MainListActivity, itemList, binding.mainList)
                         //Notificamos los cambios
-                        helperAdapter.notifyDataSetChanged()
+                        expandedListAdapter.notifyDataSetChanged()
                         //Le instanciamos el adaptador al listView
-                        binding.mainList.setAdapter(helperAdapter)
+                        binding.mainList.setAdapter(expandedListAdapter)
                     }
                 }
             }
-
             override fun onCancelled(error: DatabaseError) {
                 Log.e("FIREBASE/DATABASE", error.toString())
             }
-
         })
     }
 
@@ -198,5 +234,10 @@ class MainListActivity : AppCompatActivity() {
         parentPosition = childItemList.indexOf(childInfo) //Por ultimo se colocan en la posicion del parent
 
         return parentPosition
+    }
+
+    override fun onResume() {
+        getUserData(uid)
+        super.onResume()
     }
 }

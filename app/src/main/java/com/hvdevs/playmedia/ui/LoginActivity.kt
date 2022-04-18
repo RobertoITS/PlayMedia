@@ -3,6 +3,7 @@ package com.hvdevs.playmedia.ui
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.os.Bundle
 import android.os.Handler
 import android.util.Log
@@ -66,21 +67,70 @@ class LoginActivity : AppCompatActivity() {
         Utilities.setupUI(binding.root, this)
 
         /**El usuario puede cambiar la hora y pasar por alto la comprobacion*/
-//        //Usar la hora de servidor
-//        val simpleDateFormat = SimpleDateFormat("dd-MM-yyyy HH:mm:ss")
-//        val time = LocalDateTime.now()
-//        val formatter: DateTimeFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss")
-//        val timeF = formatter.format(time)
-////        Date(time)
-//        val timeZone = TimeZone.getTimeZone("America/Argentina/Buenos_Aires")
-//
-//        simpleDateFormat.timeZone = timeZone
-//        val dateTime = simpleDateFormat.format(Date())
-//        Toast.makeText(this, "$dateTime - - $time", Toast.LENGTH_SHORT).show()
-//
-//        binding.userInput.setText(dateTime.toString())
-//        binding.passwordInput.setText(timeF.toString())
 
+        /**Aplicamos SharedPreferences para guardar usuario y contraseña en la app. Una vez logueado se recuerdan estos datos
+         * y no es necesario volverlos a colocar*/
+
+        val sp = getSharedPreferences("my_prefs", Context.MODE_PRIVATE)
+
+        checkLogIn(sp)
+
+
+        binding.userLogin.setOnClickListener { rememberUser(sp) }
+
+    }
+
+    // Recuperamos el contenido de los textField
+
+    private fun rememberUser(sp: SharedPreferences) {
+
+        val user = binding.userInput.text.toString()
+        val password = binding.passwordInput.text.toString()
+
+        // Verificamos si los campos no son vacíos
+
+        if (user.isNotEmpty() && password.isNotEmpty()) {
+
+            // crearemos cuatro valores con el uso de la shared preferences instancia que se pasa como parámetro de la función. Los pares clave valor son el usuario, password, el inicio de sesión del usuario a traves de "active" y por último, "remember", indicándonos que el usuario inicio sesión presionando el boton de ingresar. Esto será útil ya que cada vez que el usuario salga de la sesión, la próxima vez que entre, los datos de email y password serán recordados.
+
+            with(sp.edit()) {
+
+                putString("user", user)
+                putString("password", password)
+                putString("active", "true")
+                putString("remember", "true")
+
+                apply()
+            }
+
+        } else {
+            Toast.makeText(this, "Usiario incorrecto, intente nuevamente", Toast.LENGTH_SHORT)
+                .show()
+        }
+        // al hacer click en el boton ingresar, el usuario pasa al fragment con el listado de canales
+
+        startActivity(Intent(this, MainListActivity::class.java))
+        finish()
+
+
+    }
+
+    //Si el usuario ha iniciado sesión y por alguna razón sale de la aplicación y luego quisiera volver a entrar a la app, ya no será necesario enviarlo a la pantalla de Login, sino que directamente lo llevaremos a la lista de canales. Para eso crearemos otra función que será la encargada de verificar el estado de la sesión del usuario.
+
+    private fun checkLogIn(sp: SharedPreferences){
+
+        if (sp.getString("active","") =="true"){
+
+            startActivity(Intent(this,MainListActivity::class.java))
+            finish()
+        } else{
+
+            if (sp.getString("remember","") == "true"){
+
+                binding.userInput.setText(sp.getString("user",""))
+                binding.passwordInput.setText(sp.getString("password",""))
+            }
+        }
     }
 
     private fun login(user: String, password: String){

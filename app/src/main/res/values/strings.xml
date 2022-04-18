@@ -45,6 +45,11 @@
 
 
     <string name="track_selection_title">Video Quality</string>
+    <string name="sp_first_time">first_time</string>
+    <string name="usuario">Usuario</string>
+    <string name="ingresar">Ingresar</string>
+    <string name="sp_usuario">usuario</string>
+    <string name="register_success">Usuario registrado</string>
 
 
 </resources>

@@ -1,7 +1,5 @@
 package com.hvdevs.playmedia.constructor
 
-import java.io.Serializable
-
 data class User(
     var email: String = "",
     var expire: String = "",
