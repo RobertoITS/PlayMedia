@@ -11,13 +11,15 @@
         android:layout_margin="10dp"
         android:layout_width="50dp"
         android:layout_height="50dp"
-        android:scaleType="centerCrop"
+        android:scaleType="fitCenter"
+        android:background="#ABFFFFFF"
         android:src="@mipmap/ic_launcher"/>
 
     <TextView android:id="@+id/tv_title_child"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
+        android:textSize="18sp"
         android:gravity="center_vertical"
         android:minHeight="?android:attr/listPreferredItemHeightSmall"
         android:textAppearance="?android:attr/textAppearanceListItemSmall"/>

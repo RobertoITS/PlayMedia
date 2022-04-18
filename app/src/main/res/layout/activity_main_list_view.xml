@@ -12,6 +12,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="1"
+            android:textSize="20sp"
             android:layout_marginTop="10dp"
             android:layout_marginStart="14dp"
             android:text="@string/app_name"/>
@@ -22,7 +23,7 @@
             android:layout_height="40dp"
             android:layout_margin="8dp"
             android:layout_weight="0"
-            android:background="@color/grey"
+            android:background="@drawable/button_shape"
             android:foreground="@drawable/common_full_open_on_phone"
             android:visibility="visible" />
 

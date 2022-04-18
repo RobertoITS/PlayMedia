@@ -29,11 +29,20 @@
         android:theme="@style/Theme.PlayMedia"
         tools:targetApi="n">
         <activity
+            android:name=".SplashScreen"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity
             android:name=".exoplayer2.PlayerActivity"
+            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation"
             android:exported="false"
             android:launchMode="singleTop"
-            android:theme="@style/Theme.AppCompat"
-            android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation">
+            android:theme="@style/Theme.AppCompat">
             <intent-filter>
                 <action android:name="com.google.android.exoplayer.demo.action.VIEW" />
 
@@ -52,12 +61,7 @@
         <activity
             android:name=".ui.LoginActivity"
             android:configChanges="keyboardHidden"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
+            android:exported="false">
         </activity>
     </application>
 

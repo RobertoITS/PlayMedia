@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
-import android.os.Handler
 import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -17,7 +16,6 @@ import com.hvdevs.playmedia.constructor.User
 import com.hvdevs.playmedia.databinding.ActivityLoginBinding
 import com.raqueveque.foodexample.Utilities
 import kotlinx.coroutines.*
-import kotlinx.coroutines.tasks.await
 import java.util.*
 
 @OptIn(DelicateCoroutinesApi::class)
@@ -25,10 +23,6 @@ class LoginActivity : AppCompatActivity() {
     private lateinit var binding: ActivityLoginBinding
 
     private lateinit var auth: FirebaseAuth
-
-    private lateinit var db: DatabaseReference
-
-    private var userData: User? = null
 
     private lateinit var uid: String
 
@@ -71,12 +65,12 @@ class LoginActivity : AppCompatActivity() {
         /**Aplicamos SharedPreferences para guardar usuario y contraseña en la app. Una vez logueado se recuerdan estos datos
          * y no es necesario volverlos a colocar*/
 
-        val sp = getSharedPreferences("my_prefs", Context.MODE_PRIVATE)
+//        val sp = getSharedPreferences("my_prefs", Context.MODE_PRIVATE)
 
-        checkLogIn(sp)
+//        checkLogIn(sp)
 
 
-        binding.userLogin.setOnClickListener { rememberUser(sp) }
+//        binding.userLogin.setOnClickListener { rememberUser(sp) }
 
     }
 
@@ -117,21 +111,17 @@ class LoginActivity : AppCompatActivity() {
 
     //Si el usuario ha iniciado sesión y por alguna razón sale de la aplicación y luego quisiera volver a entrar a la app, ya no será necesario enviarlo a la pantalla de Login, sino que directamente lo llevaremos a la lista de canales. Para eso crearemos otra función que será la encargada de verificar el estado de la sesión del usuario.
 
-    private fun checkLogIn(sp: SharedPreferences){
-
-        if (sp.getString("active","") =="true"){
-
-            startActivity(Intent(this,MainListActivity::class.java))
-            finish()
-        } else{
-
-            if (sp.getString("remember","") == "true"){
-
-                binding.userInput.setText(sp.getString("user",""))
-                binding.passwordInput.setText(sp.getString("password",""))
-            }
-        }
-    }
+//    private fun checkLogIn(sp: SharedPreferences){
+//        if (sp.getString("active","") =="true"){
+//            startActivity(Intent(this,MainListActivity::class.java))
+//            finish()
+//        } else{
+//            if (sp.getString("remember","") == "true"){
+//                binding.userInput.setText(sp.getString("user",""))
+//                binding.passwordInput.setText(sp.getString("password",""))
+//            }
+//        }
+//    }
 
     private fun login(user: String, password: String){
         auth.signInWithEmailAndPassword(user, password)
@@ -142,6 +132,7 @@ class LoginActivity : AppCompatActivity() {
                     val intent = Intent(this, MainListActivity::class.java)
                     intent.putExtra("uid", uid)
                     startActivity(intent)
+                    finish()
                     Toast.makeText(this, "Login exitoso", Toast.LENGTH_SHORT).show()
                 } else {
                     val errorMsg = Objects.requireNonNull(task.exception)?.localizedMessage
