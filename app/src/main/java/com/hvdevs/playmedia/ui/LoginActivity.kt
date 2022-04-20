@@ -1,6 +1,5 @@
 package com.hvdevs.playmedia.ui
 
-import android.R
 import android.animation.Animator
 import android.annotation.SuppressLint
 import android.content.ContentValues.TAG
@@ -26,7 +25,7 @@ import com.hvdevs.playmedia.viewmodel.domain.UseCaseImpl
 import com.hvdevs.playmedia.viewmodel.presentation.viewmodel.MainViewModel
 import com.hvdevs.playmedia.viewmodel.presentation.viewmodel.MainViewModelFactory
 import com.hvdevs.playmedia.viewmodel.vo.Resource
-import com.raqueveque.foodexample.Utilities
+import com.hvdevs.playmedia.utilities.Utilities
 import kotlinx.coroutines.DelicateCoroutinesApi
 import java.util.*
 

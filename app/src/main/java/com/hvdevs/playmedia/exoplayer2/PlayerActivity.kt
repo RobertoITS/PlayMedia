@@ -2,10 +2,8 @@ package com.hvdevs.playmedia.exoplayer2
 
 import android.annotation.SuppressLint
 import android.app.Activity
-import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
-import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
 import android.os.CountDownTimer
@@ -13,29 +11,23 @@ import android.os.Handler
 import android.util.Log
 import android.view.*
 import android.widget.ImageView
-import android.widget.LinearLayout
-import android.widget.TextView
 import android.widget.Toast
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.isGone
 import androidx.core.view.isVisible
 import com.google.ads.interactivemedia.v3.api.*
-import com.google.ads.interactivemedia.v3.api.player.VideoProgressUpdate
 import com.google.android.exoplayer2.*
 import com.google.android.exoplayer2.analytics.AnalyticsListener
 import com.google.android.exoplayer2.decoder.DecoderReuseEvaluation
 import com.google.android.exoplayer2.ext.ima.ImaAdsLoader
 import com.google.android.exoplayer2.source.DefaultMediaSourceFactory
 import com.google.android.exoplayer2.source.MediaSourceFactory
-import com.google.android.exoplayer2.source.TrackGroupArray
-import com.google.android.exoplayer2.source.ads.AdPlaybackState
-import com.google.android.exoplayer2.source.dash.DashMediaSource
 import com.google.android.exoplayer2.trackselection.AdaptiveTrackSelection
 import com.google.android.exoplayer2.trackselection.DefaultTrackSelector
 import com.google.android.exoplayer2.ui.*
 import com.google.android.exoplayer2.upstream.DataSource
 import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter
 import com.google.android.exoplayer2.upstream.DefaultDataSource
-import com.google.android.exoplayer2.util.Assertions
 import com.google.android.exoplayer2.util.EventLogger
 import com.google.android.exoplayer2.util.MimeTypes
 import com.google.android.exoplayer2.util.Util
@@ -46,9 +38,9 @@ import com.google.firebase.ktx.Firebase
 import com.google.gson.Gson
 import com.hvdevs.playmedia.R.*
 import com.hvdevs.playmedia.databinding.ActivityPlayerBinding
-import com.hvdevs.playmedia.ui.MainListActivity
-import com.michael.easydialog.EasyDialog
-import kotlin.math.roundToInt
+import com.hvdevs.playmedia.utilities.WindowSystemUtilities
+import com.hvdevs.playmedia.utilities.WindowSystemUtilities.hideSystemUI
+import com.hvdevs.playmedia.utilities.WindowSystemUtilities.showSystemUI
 import kotlin.properties.Delegates
 
 
@@ -85,6 +77,8 @@ class PlayerActivity : Activity(), Player.Listener, AnalyticsListener, AdEvent.A
     val myRef = database.getReference("users")
 
     private val waitUI = Handler() //Instanciamos el handler para el tiempo de espera
+
+    private var isLandScape = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -173,39 +167,31 @@ class PlayerActivity : Activity(), Player.Listener, AnalyticsListener, AdEvent.A
         //Captamos el cambio de visibilidad del UI del sistema
         //Le pasamos un handler para que se oculte a los 3 segundos de espera
         window.decorView.setOnSystemUiVisibilityChangeListener { visibility ->
-            if (visibility and View.SYSTEM_UI_FLAG_FULLSCREEN == 0){
+            if (visibility and View.SYSTEM_UI_FLAG_FULLSCREEN == 0 && isLandScape){
                 waitUI.postDelayed(wait, 3000)
             }
         }
     }
 
+    //Vemos el estado de configuracion en la rotacion de la pantalla
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        val root = playerView!!.findViewById<ConstraintLayout>(id.root)
+        // Tomamos la variable boolean para saber si esta o no en landscape
+        isLandScape = WindowSystemUtilities.checkOrientation(newConfig, window, root)
+    }
+
     //Creamos la variable de tipo runnable para parar el tiempo,
     //con la funcionalidad a realizarse
     private val wait = Runnable {
-        hideSystemUI()
+        hideSystemUI(window) //Escondemos la UI del sistema
     }
 
     //Escondemos la barra de estado y de navegacion
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
-        if (hasFocus) hideSystemUI()
-    }
-
-    //Con esta funcion logramos esconder la barra de estado y navegacion
-    //Sacado de la pagina oficial de Android Studio
-    private fun hideSystemUI() {
-        // Enables regular immersive mode.
-        // For "lean back" mode, remove SYSTEM_UI_FLAG_IMMERSIVE.
-        // Or for "sticky immersive," replace it with SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-        window.decorView.systemUiVisibility = (View.SYSTEM_UI_FLAG_IMMERSIVE
-                // Set the content to appear under the system bars so that the
-                // content doesn't resize when the system bars hide and show.
-                or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                // Hide the nav bar and status bar
-                or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                or View.SYSTEM_UI_FLAG_FULLSCREEN)
+        //Si esta en landscape
+        if (hasFocus && isLandScape) hideSystemUI(window) //Escondemos la UI del sistema
     }
 
     //Inicializamos es reproductor
@@ -461,4 +447,5 @@ class PlayerActivity : Activity(), Player.Listener, AnalyticsListener, AdEvent.A
     companion object {
         const val SUBS = "https://bitdash-a.akamaihd.net/content/sintel/hls/subtitles_en.vtt"
     }
+
 }
