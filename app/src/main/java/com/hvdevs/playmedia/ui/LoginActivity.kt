@@ -1,22 +1,35 @@
 package com.hvdevs.playmedia.ui
 
+import android.R
+import android.animation.Animator
 import android.annotation.SuppressLint
-import android.content.Context
+import android.content.ContentValues.TAG
 import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
 import android.util.Log
+import android.view.View
+import android.view.ViewAnimationUtils
+import android.view.animation.CycleInterpolator
+import android.view.animation.TranslateAnimation
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.lifecycle.ViewModelProvider
 import com.google.android.gms.tasks.Task
-import com.google.firebase.auth.AuthResult
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.*
-import com.hvdevs.playmedia.constructor.User
+import com.google.firebase.auth.*
+import com.google.firebase.database.FirebaseDatabase
 import com.hvdevs.playmedia.databinding.ActivityLoginBinding
+import com.hvdevs.playmedia.viewmodel.data.network.RepoImplement
+import com.hvdevs.playmedia.viewmodel.domain.UseCaseImpl
+import com.hvdevs.playmedia.viewmodel.presentation.viewmodel.MainViewModel
+import com.hvdevs.playmedia.viewmodel.presentation.viewmodel.MainViewModelFactory
+import com.hvdevs.playmedia.viewmodel.vo.Resource
 import com.raqueveque.foodexample.Utilities
-import kotlinx.coroutines.*
+import kotlinx.coroutines.DelicateCoroutinesApi
 import java.util.*
+
 
 @OptIn(DelicateCoroutinesApi::class)
 class LoginActivity : AppCompatActivity() {
@@ -25,6 +38,12 @@ class LoginActivity : AppCompatActivity() {
     private lateinit var auth: FirebaseAuth
 
     private lateinit var uid: String
+
+    private val viewModel by lazy {
+        ViewModelProvider(this,
+            MainViewModelFactory(UseCaseImpl(RepoImplement()))
+        )[MainViewModel::class.java]
+    } //La variable del viewModel
 
     @SuppressLint("SimpleDateFormat")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -36,9 +55,16 @@ class LoginActivity : AppCompatActivity() {
 
         binding.userInput.setOnFocusChangeListener { view, b ->
             if (!b){
-                if ("@" !in binding.userInput.text!!) binding.user.error = "Usuario Incorrecto"
+                if ("@" !in binding.userInput.text!!) {
+                    binding.user.error = "Usuario Incorrecto"
+                    binding.user.startAnimation(shakeError())
+                }
                 else binding.user.error = null
             } else binding.user.error = null
+        }
+
+        binding.passwordInput.setOnFocusChangeListener { v, hasFocus ->
+            if (hasFocus) binding.password.error = null
         }
 
         //Define el comportamiento del endIcon del input,
@@ -47,10 +73,19 @@ class LoginActivity : AppCompatActivity() {
             binding.userInput.text = null
         }
 
+        //Listener del boton login
         binding.userLogin.setOnClickListener {
-            if (binding.userInput.text.isNullOrEmpty() || binding.passwordInput.text.isNullOrEmpty())
-                Toast.makeText(this, "Complete los campos", Toast.LENGTH_SHORT).show()
+            binding.user.error = null
+            binding.password.error = null
+            //Si los campos estan vacios:
+            if (binding.userInput.text.isNullOrEmpty() || binding.passwordInput.text.isNullOrEmpty()){
+                binding.user.error = "Complete los campos"
+                binding.user.startAnimation(shakeError())
+                binding.password.startAnimation(shakeError())
+            }
+            //Si no se cumple la condicion anterior, pasamos a logear
             else {
+                revealLayoutAnimation(binding.progressBarLayout, false)//Mostramos el progressBar
                 val user = binding.userInput.text.toString()
                 val password = binding.passwordInput.text.toString()
                 login(user, password)
@@ -128,16 +163,164 @@ class LoginActivity : AppCompatActivity() {
             .addOnCompleteListener (this) { task: Task<AuthResult> ->
                 if (task.isSuccessful){
                     uid = auth.currentUser?.uid.toString()
+                    startNewSession()
                     Log.d("FIREBASE", uid)
-                    val intent = Intent(this, MainListActivity::class.java)
-                    intent.putExtra("uid", uid)
-                    startActivity(intent)
-                    finish()
-                    Toast.makeText(this, "Login exitoso", Toast.LENGTH_SHORT).show()
                 } else {
-                    val errorMsg = Objects.requireNonNull(task.exception)?.localizedMessage
-                    Toast.makeText(this, errorMsg, Toast.LENGTH_SHORT).show()
+                    revealLayoutAnimation(binding.progressBarLayout, true)
+                    try {
+                        throw task.exception!!
+                    } catch (e: FirebaseAuthWeakPasswordException) {
+//                        binding.user.error = "Usuario Incorrecto"
+                        binding.password.error = "Contraseña Incorrecta"
+                        binding.user.startAnimation(shakeError())
+                        binding.password.startAnimation(shakeError())
+//                        binding.userInput.requestFocus()
+                    } catch (e: FirebaseAuthInvalidCredentialsException) {
+                        binding.password.error = "Usuario o contraseña Incorrectos"
+                        binding.user.startAnimation(shakeError())
+                        binding.password.startAnimation(shakeError())
+                        binding.userInput.requestFocus()
+                    } catch (e: FirebaseAuthUserCollisionException) {
+                        val errorMsg = Objects.requireNonNull(task.exception)?.localizedMessage
+                        Toast.makeText(this, errorMsg, Toast.LENGTH_SHORT).show()
+                    } catch (e: Exception) {
+                        Log.e(TAG, e.message!!)
+                        val errorMsg = Objects.requireNonNull(task.exception)?.localizedMessage
+                        Toast.makeText(this, errorMsg, Toast.LENGTH_SHORT).show()
+                    }
                 }
             }
+    }
+
+    private fun startNewSession() {
+        viewModel.fetchSessions.observe(this@LoginActivity) { result ->
+            when (result){
+                is Resource.Loading -> {} //Cuando comienza a cargarse la informacion
+                is Resource.Success -> {
+                    if (result.data < 2) {
+                        val newSession = result.data + 1
+                        val dbUser = FirebaseDatabase.getInstance().reference
+                        dbUser
+                            .child("users/$uid/sessions/quantity")
+                            .setValue(newSession)
+                        val intent = Intent(this, MainListActivity::class.java)
+                        intent.putExtra("uid", uid)
+                        intent.putExtra("sessions", newSession)
+                        revealLayoutAnimation(
+                            binding.progressBarLayout,
+                            true
+                        )//Ocultamos el progressBar
+                        startActivity(intent)
+                        finish()
+                        Toast.makeText(this, "Login exitoso", Toast.LENGTH_SHORT).show()
+                    }
+                    else {
+                        revealLayoutAnimation(binding.progressBarLayout, true)
+                        showDialog()
+                    }
+                } //Cuando la busqueda se completa
+                is Resource.Failure -> {
+                    revealLayoutAnimation(binding.progressBarLayout, true)//Ocultamos el progressBar
+                } //Cuando la busqueda falla
+        }
+        }
+    }
+
+    //Esta funcion se encarga solamente de animar la aparicion del progressBar
+    private fun revealLayoutAnimation(layout: ConstraintLayout, isRevealed: Boolean) {
+
+        // based on the boolean value the
+        // reveal layout should be toggled
+        if (!isRevealed) {
+
+            // get the right and bottom side
+            // lengths of the reveal layout
+            val x: Int = layout.right / 2
+            val y: Int = layout.bottom / 2
+
+            // here the starting radius of the reveal
+            // layout is 0 when it is not visible
+            val startRadius = 0
+
+            // make the end radius should
+            // match the while parent view
+            val endRadius = kotlin.math.hypot(
+                layout.width.toDouble(),
+                layout.height.toDouble()
+            ).toInt()
+
+            // create the instance of the ViewAnimationUtils to
+            // initiate the circular reveal animation
+            val anim = ViewAnimationUtils.createCircularReveal(
+                layout, x, y,
+                startRadius.toFloat(), endRadius.toFloat()
+            )
+
+            // make the invisible reveal layout to visible
+            // so that upon revealing it can be visible to user
+            layout.visibility = View.VISIBLE
+            // now start the reveal animation
+            anim.start()
+
+        } else {
+
+            // get the right and bottom side lengths
+            // of the reveal layout
+            val x: Int = layout.right / 2
+            val y: Int = layout.bottom / 2
+
+            // here the starting radius of the reveal layout is its full width
+            val startRadius: Int = kotlin.math.max(layout.width, layout.height)
+
+            // and the end radius should be zero at this
+            // point because the layout should be closed
+            val endRadius = 0
+
+            // create the instance of the ViewAnimationUtils
+            // to initiate the circular reveal animation
+            val anim = ViewAnimationUtils.createCircularReveal(
+                layout, x, y,
+                startRadius.toFloat(), endRadius.toFloat()
+            )
+
+            // now as soon as the animation is ending, the reveal
+            // layout should also be closed
+            anim.addListener(object : Animator.AnimatorListener {
+                override fun onAnimationStart(animator: Animator) {}
+                override fun onAnimationEnd(animator: Animator) {
+                    layout.visibility = View.GONE
+
+                }
+
+                override fun onAnimationCancel(animator: Animator) {}
+                override fun onAnimationRepeat(animator: Animator) {}
+            })
+
+            // start the closing animation
+            anim.start()
+        }
+    }
+
+    //Creamos el dialogo
+    private fun showDialog(){
+        val dialogBuilder = AlertDialog.Builder(this)
+        dialogBuilder
+            .setMessage("Existe mas de dos (2) sesiones activas")
+            .setCancelable(false) //No se puede cancelar el dialog
+            .setPositiveButton("Ok") { dialog, which ->
+                finish()
+                dialog.dismiss()
+            }
+        val alert = dialogBuilder.create()
+        alert.setTitle("Error de autenticacion")
+        alert.show()
+    }
+
+    //Una animacion de sacudida para los text field
+    private fun shakeError(): TranslateAnimation {
+        val shake = TranslateAnimation(0f, 10f, 0f, 0f)
+        shake.duration = 500
+        shake.interpolator = CycleInterpolator(7f)
+        return shake
     }
 }

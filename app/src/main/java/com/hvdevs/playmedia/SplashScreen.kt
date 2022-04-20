@@ -8,6 +8,7 @@ import android.os.Looper
 import android.view.animation.Animation
 import android.view.animation.AnimationUtils
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.FirebaseDatabase
 import com.hvdevs.playmedia.databinding.ActivitySplashScreenBinding
 import com.hvdevs.playmedia.ui.LoginActivity
 import com.hvdevs.playmedia.ui.MainListActivity
@@ -16,6 +17,7 @@ class SplashScreen : AppCompatActivity() {
     // creamos la variable auth que gestionara los metodos de inicio de sesion usando el modulo de Auth de Firebase.
     private lateinit var auth: FirebaseAuth
     private lateinit var binding: ActivitySplashScreenBinding
+    private var session = 0
     override fun onCreate(savedInstanceState: Bundle?) {
         binding = ActivitySplashScreenBinding.inflate(layoutInflater)
         super.onCreate(savedInstanceState)
@@ -37,6 +39,10 @@ class SplashScreen : AppCompatActivity() {
         // si no es nulo, es decir que ya inicio sesion, por lo cual sus datos estan guardados, si ese es el caso lo mandamos a la pagina inicial.
         else {
             val uid = auth.currentUser!!.uid
+            val dbUser = FirebaseDatabase.getInstance().reference.child("users/$uid/sessions/quantity").get()
+            dbUser.addOnSuccessListener {
+                session = Integer.parseInt(it.value.toString())
+            }
             val intent = Intent(this, MainListActivity::class.java)
             intent.putExtra("uid", uid)
             debounce(intent)
@@ -48,6 +54,7 @@ class SplashScreen : AppCompatActivity() {
     // navegue a esa pagina
     private fun debounce(intent: Intent){
         Handler(Looper.getMainLooper()).postDelayed({
+            intent.putExtra("sessions", session)
             startActivity(intent)
             finish()
         }, 3000) // 3000 milisegundos = 3 segundos

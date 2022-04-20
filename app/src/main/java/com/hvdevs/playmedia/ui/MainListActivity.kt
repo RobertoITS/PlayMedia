@@ -1,28 +1,20 @@
 package com.hvdevs.playmedia.ui
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.os.CountDownTimer
 import android.util.Log
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
-import android.widget.TextView
 import android.widget.Toast
-import androidx.fragment.app.Fragment
+import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatActivity
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
-import com.google.firebase.database.ktx.database
-import com.google.firebase.ktx.Firebase
-import com.hvdevs.playmedia.R
-import com.hvdevs.playmedia.exoplayer2.PlayerActivity
 import com.hvdevs.playmedia.adapters.ExpandedListAdapter
 import com.hvdevs.playmedia.constructor.ChildModel
 import com.hvdevs.playmedia.constructor.ParentModel
 import com.hvdevs.playmedia.constructor.User
 import com.hvdevs.playmedia.databinding.ActivityMainListViewBinding
+import com.hvdevs.playmedia.exoplayer2.PlayerActivity
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -41,6 +33,7 @@ class MainListActivity : AppCompatActivity() {
     private var userData: User? = null //El objeto del usuario
     private lateinit var uid: String //Uid del usuario
     private var testContent = false //Controla el contenido de prueba
+    private var session = 0 //Sesiones activas del usuario
 
     override fun onCreate(savedInstanceState: Bundle?) {
         binding = ActivityMainListViewBinding.inflate(layoutInflater)
@@ -50,6 +43,9 @@ class MainListActivity : AppCompatActivity() {
         //Obtenemos el bundle de la actividad anterior
         val bundle: Bundle? = intent.extras
         uid = bundle?.getString("uid").toString()
+        session = bundle?.getInt("sessions")!!.toInt() //Obtenemos las sesiones pasadas por el putExtras
+        Log.d("SESSIONS", session.toString())
+
 
         //Obtenemos los datos del usuario
         getUserData(uid)
@@ -71,8 +67,7 @@ class MainListActivity : AppCompatActivity() {
             //Comparamos las condiciones del usuario
             //En este caso el tipo de usuario
             when (userData?.type) {
-                0 -> { Toast.makeText(this, "No tiene acceso a este contenido", Toast.LENGTH_SHORT).show() }
-                1 -> {
+                0 -> {
                     if (userData?.time!! < 2000){
                         Toast.makeText(this, "Su tiempo de prueba expiro", Toast.LENGTH_SHORT).show()
                     } else{
@@ -86,7 +81,7 @@ class MainListActivity : AppCompatActivity() {
                         startActivity(intent)
                     }
                 }
-                2 -> {
+                1 -> {
                     //Formateador de las fechas por patron
                     val formatter: DateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
                     //Parseamos la fecha obtenida de la db
@@ -99,7 +94,7 @@ class MainListActivity : AppCompatActivity() {
                     val localDateFormatted = formatter.format(localDate)
                     //Si la fecha es mayor, reproduce el contenido
                     if (serverDateFormatted < localDateFormatted){
-                        Toast.makeText(this, "Su licencia expira el $serverDateFormatted", Toast.LENGTH_SHORT).show()
+//                        Toast.makeText(this, "Su licencia expira el $serverDateFormatted", Toast.LENGTH_SHORT).show()
                         //Pasamos si es contenido de prueba o no
                         intent.putExtra("testContent", testContent)
                         startActivity(intent)
@@ -114,7 +109,23 @@ class MainListActivity : AppCompatActivity() {
 
         // boton LogOt, agrego una escucha al click
 
-        binding.btnLogOut.setOnClickListener { logOut() }
+        binding.btnLogOut.setOnClickListener {
+            //Creamos un dialog builder para el cierre de sesion
+            val dialogBuilder = AlertDialog.Builder(this)
+            dialogBuilder
+                .setMessage("¿Desea cerrar su sesion?")
+                .setCancelable(false) //No se puede cancelar el dialog
+                .setPositiveButton("Si") { dialog, which ->
+                    logOut()
+                    dialog.dismiss()
+                }
+                .setNegativeButton ("No") { dialog, which ->
+                    dialog.dismiss()
+                }
+            val alert = dialogBuilder.create()
+            alert.setTitle("Cierre de sesion")
+            alert.show()
+        }
 
     }
 
@@ -122,6 +133,13 @@ class MainListActivity : AppCompatActivity() {
     // si el usuario clickea en el cierre de sesion, se dirige a la pantalla de Login y cambia es estado del login, pasa de estar activo a inactivo.
 
     private fun logOut() {
+
+        dbUser = FirebaseDatabase.getInstance().reference
+        dbUser.child("users/$uid/sessions/quantity")
+            .setValue(session - 1)
+
+        val auth = FirebaseAuth.getInstance()
+        auth.signOut()
 
         val sp = getSharedPreferences("my_prefs", Context.MODE_PRIVATE)
 
@@ -132,7 +150,6 @@ class MainListActivity : AppCompatActivity() {
         }
 
         //paso a la actividad Login, y termino esta actividad.
-
         startActivity(Intent(this,LoginActivity::class.java))
         finish()
     }
