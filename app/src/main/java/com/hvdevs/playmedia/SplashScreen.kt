@@ -7,21 +7,29 @@ import android.os.Handler
 import android.os.Looper
 import android.view.animation.Animation
 import android.view.animation.AnimationUtils
+import androidx.appcompat.app.AlertDialog
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
 import com.hvdevs.playmedia.databinding.ActivitySplashScreenBinding
 import com.hvdevs.playmedia.ui.LoginActivity
 import com.hvdevs.playmedia.ui.MainListActivity
+import kotlin.properties.Delegates
 
 class SplashScreen : AppCompatActivity() {
     // creamos la variable auth que gestionara los metodos de inicio de sesion usando el modulo de Auth de Firebase.
     private lateinit var auth: FirebaseAuth
     private lateinit var binding: ActivitySplashScreenBinding
     private var session = 0
+    private var actualVersion by Delegates.notNull<Int>()
     override fun onCreate(savedInstanceState: Bundle?) {
         binding = ActivitySplashScreenBinding.inflate(layoutInflater)
         super.onCreate(savedInstanceState)
         setContentView(binding.root)
+
+        val dbVersion = FirebaseDatabase.getInstance().reference.child("version_code/version").get()
+        dbVersion.addOnSuccessListener {
+            actualVersion = Integer.parseInt(it.value.toString())
+        }
 
         val anim2: Animation = AnimationUtils.loadAnimation(this, R.anim.translation_up_to_down)
         binding.image.animation = anim2
@@ -55,8 +63,30 @@ class SplashScreen : AppCompatActivity() {
     private fun debounce(intent: Intent){
         Handler(Looper.getMainLooper()).postDelayed({
             intent.putExtra("sessions", session)
-            startActivity(intent)
-            finish()
+            if (checkForUpdate()) update()
+            else {
+                startActivity(intent)
+                finish()
+            }
         }, 3000) // 3000 milisegundos = 3 segundos
+    }
+
+    private fun update() {
+        val dialogBuilder = AlertDialog.Builder(this)
+        dialogBuilder
+            .setMessage("Existe una version nueva de esta app. Por favor contactese con su proveedor para actualizar")
+            .setCancelable(false) //No se puede cancelar el dialog
+            .setPositiveButton("Salir") { dialog, which ->
+                dialog.dismiss()
+                finish()
+            }
+        val alert = dialogBuilder.create()
+        alert.setTitle("Actualizacion disponible")
+        alert.show()
+    }
+
+    private fun checkForUpdate(): Boolean{
+        val currentVersion = BuildConfig.VERSION_CODE
+        return currentVersion < actualVersion
     }
 }
