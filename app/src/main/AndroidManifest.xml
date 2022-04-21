@@ -29,7 +29,7 @@
         android:theme="@style/Theme.PlayMedia"
         tools:targetApi="n">
         <activity
-            android:name=".SplashScreen"
+            android:name=".splashscreen.SplashScreen"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -56,10 +56,10 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".ui.MainListActivity"
+            android:name=".mainlist.ui.MainListActivity"
             android:exported="false" />
         <activity
-            android:name=".ui.LoginActivity"
+            android:name=".login.ui.LoginActivity"
             android:configChanges="keyboardHidden"
             android:exported="false">
         </activity>

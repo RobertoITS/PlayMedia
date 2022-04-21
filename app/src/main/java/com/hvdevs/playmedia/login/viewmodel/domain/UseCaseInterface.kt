@@ -1,6 +1,6 @@
-package com.hvdevs.playmedia.viewmodel.domain
+package com.hvdevs.playmedia.login.viewmodel.domain
 
-import com.hvdevs.playmedia.viewmodel.vo.Resource
+import com.hvdevs.playmedia.resourse.Resource
 
 interface UseCaseInterface {
     //Es un metodo que no se sabe cuando va a terminar.

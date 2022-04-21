@@ -1,4 +1,4 @@
-package com.hvdevs.playmedia.constructor
+package com.hvdevs.playmedia.login.constructor
 
 data class User(
     var email: String = "",

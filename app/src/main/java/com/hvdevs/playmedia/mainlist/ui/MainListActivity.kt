@@ -1,4 +1,4 @@
-package com.hvdevs.playmedia.ui
+package com.hvdevs.playmedia.mainlist.ui
 
 import android.content.Context
 import android.content.Intent
@@ -7,14 +7,21 @@ import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.ViewModelProvider
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.*
-import com.hvdevs.playmedia.adapters.ExpandedListAdapter
-import com.hvdevs.playmedia.constructor.ChildModel
-import com.hvdevs.playmedia.constructor.ParentModel
-import com.hvdevs.playmedia.constructor.User
+import com.hvdevs.playmedia.mainlist.adapters.ExpandedListAdapter
+import com.hvdevs.playmedia.mainlist.constructor.ChildModel
+import com.hvdevs.playmedia.mainlist.constructor.ParentModel
+import com.hvdevs.playmedia.login.constructor.User
 import com.hvdevs.playmedia.databinding.ActivityMainListViewBinding
 import com.hvdevs.playmedia.exoplayer2.PlayerActivity
+import com.hvdevs.playmedia.login.ui.LoginActivity
+import com.hvdevs.playmedia.mainlist.viewmodel.data.network.MainListRepoImplement
+import com.hvdevs.playmedia.mainlist.viewmodel.domain.MainListUseCaseImplement
+import com.hvdevs.playmedia.mainlist.viewmodel.presentation.viewmodel.MainListViewModel
+import com.hvdevs.playmedia.mainlist.viewmodel.presentation.viewmodel.MainListViewModelFactory
+import com.hvdevs.playmedia.resourse.Resource
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -35,6 +42,13 @@ class MainListActivity : AppCompatActivity() {
     private var testContent = false //Controla el contenido de prueba
     private var session = 0 //Sesiones activas del usuario
 
+    private val viewModel by lazy {
+        ViewModelProvider(
+            this,
+            MainListViewModelFactory(MainListUseCaseImplement(MainListRepoImplement()))
+        )[MainListViewModel::class.java]
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         binding = ActivityMainListViewBinding.inflate(layoutInflater)
         super.onCreate(savedInstanceState)
@@ -51,7 +65,8 @@ class MainListActivity : AppCompatActivity() {
         getUserData(uid)
 
         //Obtenemos los datos de la lista principal
-        getParentData()
+        getListData()
+//        getParentData()
 
         //El click listener de los child en la lista principal
         binding.mainList.setOnChildClickListener { expandableListView, view, parentPosition, childPosition, long ->
@@ -129,6 +144,25 @@ class MainListActivity : AppCompatActivity() {
 
     }
 
+    private fun getListData() {
+        viewModel.fetchListData.observe(this@MainListActivity){ result ->
+            when (result){
+                is Resource.Loading -> {  }
+                is Resource.Success -> {
+                    //Le pasamos los datos al adaptador
+                    Log.e("LISTA", result.data.toString())
+                    expandedListAdapter = ExpandedListAdapter(this@MainListActivity, result.data, binding.mainList)
+                    //Notificamos los cambios
+                    expandedListAdapter.notifyDataSetChanged()
+                    //Le instanciamos el adaptador al listView
+                    binding.mainList.setAdapter(expandedListAdapter)
+                }
+                is Resource.Failure -> {  }
+            }
+
+        }
+    }
+
     // creo la funcion logOut y llamo a la shared preferences creado en LoginActivity
     // si el usuario clickea en el cierre de sesion, se dirige a la pantalla de Login y cambia es estado del login, pasa de estar activo a inactivo.
 
@@ -150,7 +184,7 @@ class MainListActivity : AppCompatActivity() {
         }
 
         //paso a la actividad Login, y termino esta actividad.
-        startActivity(Intent(this,LoginActivity::class.java))
+        startActivity(Intent(this, LoginActivity::class.java))
         finish()
     }
 

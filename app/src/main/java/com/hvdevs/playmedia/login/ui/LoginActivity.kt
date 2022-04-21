@@ -1,4 +1,4 @@
-package com.hvdevs.playmedia.ui
+package com.hvdevs.playmedia.login.ui
 
 import android.animation.Animator
 import android.annotation.SuppressLint
@@ -20,11 +20,12 @@ import com.google.android.gms.tasks.Task
 import com.google.firebase.auth.*
 import com.google.firebase.database.FirebaseDatabase
 import com.hvdevs.playmedia.databinding.ActivityLoginBinding
-import com.hvdevs.playmedia.viewmodel.data.network.RepoImplement
-import com.hvdevs.playmedia.viewmodel.domain.UseCaseImpl
-import com.hvdevs.playmedia.viewmodel.presentation.viewmodel.MainViewModel
-import com.hvdevs.playmedia.viewmodel.presentation.viewmodel.MainViewModelFactory
-import com.hvdevs.playmedia.viewmodel.vo.Resource
+import com.hvdevs.playmedia.mainlist.ui.MainListActivity
+import com.hvdevs.playmedia.login.viewmodel.data.network.RepoImplement
+import com.hvdevs.playmedia.login.viewmodel.domain.UseCaseImpl
+import com.hvdevs.playmedia.login.viewmodel.presentation.viewmodel.MainViewModel
+import com.hvdevs.playmedia.login.viewmodel.presentation.viewmodel.MainViewModelFactory
+import com.hvdevs.playmedia.resourse.Resource
 import com.hvdevs.playmedia.utilities.Utilities
 import kotlinx.coroutines.DelicateCoroutinesApi
 import java.util.*

@@ -1,4 +1,4 @@
-package com.hvdevs.playmedia.viewmodel.vo
+package com.hvdevs.playmedia.resourse
 
 sealed class Resource<out T> {
     class Loading<out T> : Resource<T>()

@@ -1,10 +1,10 @@
-package com.hvdevs.playmedia.viewmodel.presentation.viewmodel
+package com.hvdevs.playmedia.login.viewmodel.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.liveData
 //import androidx.lifecycle.liveData
-import com.hvdevs.playmedia.viewmodel.domain.UseCaseInterface
-import com.hvdevs.playmedia.viewmodel.vo.Resource
+import com.hvdevs.playmedia.login.viewmodel.domain.UseCaseInterface
+import com.hvdevs.playmedia.resourse.Resource
 import kotlinx.coroutines.Dispatchers
 
 //Aca escribimos la logica para sacar la info de firebase

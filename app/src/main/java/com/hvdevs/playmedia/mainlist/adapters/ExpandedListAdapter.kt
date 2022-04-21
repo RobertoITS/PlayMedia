@@ -1,4 +1,4 @@
-package com.hvdevs.playmedia.adapters
+package com.hvdevs.playmedia.mainlist.adapters
 
 import android.content.Context
 import android.view.LayoutInflater
@@ -9,8 +9,8 @@ import android.widget.ExpandableListView
 import android.widget.ImageView
 import android.widget.TextView
 import com.hvdevs.playmedia.R
-import com.hvdevs.playmedia.constructor.ChildModel
-import com.hvdevs.playmedia.constructor.ParentModel
+import com.hvdevs.playmedia.mainlist.constructor.ChildModel
+import com.hvdevs.playmedia.mainlist.constructor.ParentModel
 import com.squareup.picasso.Picasso
 
 /**

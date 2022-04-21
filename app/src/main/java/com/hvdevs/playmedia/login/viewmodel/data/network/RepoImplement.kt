@@ -1,10 +1,10 @@
-package com.hvdevs.playmedia.viewmodel.data.network
+package com.hvdevs.playmedia.login.viewmodel.data.network
 
 import android.util.Log
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.ktx.Firebase
-import com.hvdevs.playmedia.viewmodel.vo.Resource
+import com.hvdevs.playmedia.resourse.Resource
 import kotlinx.coroutines.tasks.await
 
 class RepoImplement: RepoInterface {

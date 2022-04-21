@@ -1,4 +1,4 @@
-package com.hvdevs.playmedia
+package com.hvdevs.playmedia.splashscreen
 
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
@@ -10,9 +10,11 @@ import android.view.animation.AnimationUtils
 import androidx.appcompat.app.AlertDialog
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
+import com.hvdevs.playmedia.BuildConfig
+import com.hvdevs.playmedia.R
 import com.hvdevs.playmedia.databinding.ActivitySplashScreenBinding
-import com.hvdevs.playmedia.ui.LoginActivity
-import com.hvdevs.playmedia.ui.MainListActivity
+import com.hvdevs.playmedia.login.ui.LoginActivity
+import com.hvdevs.playmedia.mainlist.ui.MainListActivity
 import kotlin.properties.Delegates
 
 class SplashScreen : AppCompatActivity() {

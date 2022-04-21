@@ -1,4 +1,4 @@
-package com.hvdevs.playmedia.constructor
+package com.hvdevs.playmedia.mainlist.constructor
 
 data class ChildModel (
     var drm_license_url: String = "",

@@ -1,8 +1,8 @@
-package com.hvdevs.playmedia.viewmodel.presentation.viewmodel
+package com.hvdevs.playmedia.login.viewmodel.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import com.hvdevs.playmedia.viewmodel.domain.UseCaseInterface
+import com.hvdevs.playmedia.login.viewmodel.domain.UseCaseInterface
 
 //Esta clase se genera para pasar las instancias al viewmodel
 class MainViewModelFactory(private val useCase: UseCaseInterface): ViewModelProvider.Factory {
