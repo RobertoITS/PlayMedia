@@ -8,6 +8,7 @@ import android.os.Looper
 import android.view.animation.Animation
 import android.view.animation.AnimationUtils
 import androidx.appcompat.app.AlertDialog
+import androidx.lifecycle.ViewModelProvider
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
 import com.hvdevs.playmedia.BuildConfig
@@ -15,6 +16,11 @@ import com.hvdevs.playmedia.R
 import com.hvdevs.playmedia.databinding.ActivitySplashScreenBinding
 import com.hvdevs.playmedia.login.ui.LoginActivity
 import com.hvdevs.playmedia.mainlist.ui.MainListActivity
+import com.hvdevs.playmedia.resourse.Resource
+import com.hvdevs.playmedia.splashscreen.viewmodel.data.network.VersionRepoImplement
+import com.hvdevs.playmedia.splashscreen.viewmodel.domain.VersionUseCaseImplement
+import com.hvdevs.playmedia.splashscreen.viewmodel.presentation.viewmodel.VersionViewModel
+import com.hvdevs.playmedia.splashscreen.viewmodel.presentation.viewmodel.VersionViewModelFactory
 import kotlin.properties.Delegates
 
 class SplashScreen : AppCompatActivity() {
@@ -22,16 +28,20 @@ class SplashScreen : AppCompatActivity() {
     private lateinit var auth: FirebaseAuth
     private lateinit var binding: ActivitySplashScreenBinding
     private var session = 0
-    private var actualVersion by Delegates.notNull<Int>()
+    private var actualVersion = 0
+
+    private val viewModel by lazy {
+        ViewModelProvider(
+            this,
+            VersionViewModelFactory(
+                VersionUseCaseImplement(VersionRepoImplement()))
+        )[VersionViewModel::class.java]
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         binding = ActivitySplashScreenBinding.inflate(layoutInflater)
         super.onCreate(savedInstanceState)
         setContentView(binding.root)
-
-        val dbVersion = FirebaseDatabase.getInstance().reference.child("version_code/version").get()
-        dbVersion.addOnSuccessListener {
-            actualVersion = Integer.parseInt(it.value.toString())
-        }
 
         val anim2: Animation = AnimationUtils.loadAnimation(this, R.anim.translation_up_to_down)
         binding.image.animation = anim2
@@ -88,6 +98,28 @@ class SplashScreen : AppCompatActivity() {
     }
 
     private fun checkForUpdate(): Boolean{
+        viewModel.fetchVersion.observe(this@SplashScreen){ result ->
+            when (result){
+                is Resource.Loading -> {}
+                is Resource.Success -> {
+                    actualVersion = result.data
+                }
+                is Resource.Failure -> {
+                    val dialogBuilder = AlertDialog.Builder(this)
+                    dialogBuilder
+                        .setMessage("Algo salio mal al comprobar la version")
+                        .setCancelable(false) //No se puede cancelar el dialog
+                        .setPositiveButton("Salir") { dialog, which ->
+                            dialog.dismiss()
+                            finish()
+                        }
+                    val alert = dialogBuilder.create()
+                    alert.setTitle("Error de autenticacion")
+                    alert.show()
+                }
+            }
+
+        }
         val currentVersion = BuildConfig.VERSION_CODE
         return currentVersion < actualVersion
     }

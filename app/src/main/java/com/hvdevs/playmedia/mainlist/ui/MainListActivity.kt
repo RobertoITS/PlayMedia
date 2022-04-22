@@ -4,24 +4,27 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
+import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.database.*
-import com.hvdevs.playmedia.mainlist.adapters.ExpandedListAdapter
-import com.hvdevs.playmedia.mainlist.constructor.ChildModel
-import com.hvdevs.playmedia.mainlist.constructor.ParentModel
-import com.hvdevs.playmedia.login.constructor.User
+import com.google.firebase.database.DatabaseReference
+import com.google.firebase.database.FirebaseDatabase
+import com.hvdevs.playmedia.R.color
 import com.hvdevs.playmedia.databinding.ActivityMainListViewBinding
 import com.hvdevs.playmedia.exoplayer2.PlayerActivity
+import com.hvdevs.playmedia.login.constructor.User
 import com.hvdevs.playmedia.login.ui.LoginActivity
+import com.hvdevs.playmedia.mainlist.adapters.ExpandedListAdapter
+import com.hvdevs.playmedia.mainlist.constructor.ParentModel
 import com.hvdevs.playmedia.mainlist.viewmodel.data.network.MainListRepoImplement
 import com.hvdevs.playmedia.mainlist.viewmodel.domain.MainListUseCaseImplement
 import com.hvdevs.playmedia.mainlist.viewmodel.presentation.viewmodel.MainListViewModel
 import com.hvdevs.playmedia.mainlist.viewmodel.presentation.viewmodel.MainListViewModelFactory
 import com.hvdevs.playmedia.resourse.Resource
+import com.hvdevs.playmedia.utilities.Connectivity
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
@@ -29,10 +32,6 @@ class MainListActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainListViewBinding //El viewBinding
 
-    private lateinit var dbParent: DatabaseReference //Referencia a la bd del parent
-    private lateinit var dbChild: DatabaseReference //Refecencia a la bd de los child
-
-    private var parentItem:LinkedHashMap<String, ParentModel> = LinkedHashMap() //Lista del parent - child
     private var itemList: ArrayList<ParentModel> = arrayListOf() //Lista solo del parent
     private lateinit var expandedListAdapter: ExpandedListAdapter //El adaptador del expandedListView
 
@@ -66,13 +65,11 @@ class MainListActivity : AppCompatActivity() {
 
         //Obtenemos los datos de la lista principal
         getListData()
-//        getParentData()
 
         //El click listener de los child en la lista principal
         binding.mainList.setOnChildClickListener { expandableListView, view, parentPosition, childPosition, long ->
             val parentInfo = itemList[parentPosition]
             val childInfo = parentInfo.itemList[childPosition]
-//            Toast.makeText(baseContext, childInfo.name, Toast.LENGTH_SHORT).show()
             val intent = Intent(this, PlayerActivity::class.java)
             //Pasamos la licencia y la uri para el reproductor
             intent.putExtra("licence", childInfo.drm_license_url)
@@ -109,7 +106,6 @@ class MainListActivity : AppCompatActivity() {
                     val localDateFormatted = formatter.format(localDate)
                     //Si la fecha es mayor, reproduce el contenido
                     if (serverDateFormatted < localDateFormatted){
-//                        Toast.makeText(this, "Su licencia expira el $serverDateFormatted", Toast.LENGTH_SHORT).show()
                         //Pasamos si es contenido de prueba o no
                         intent.putExtra("testContent", testContent)
                         startActivity(intent)
@@ -122,67 +118,96 @@ class MainListActivity : AppCompatActivity() {
             false
         }
 
-        // boton LogOt, agrego una escucha al click
+        //Le agregamos estilo a los colores del refresco
+        binding.swipeLayout.setColorSchemeResources(
+            color.s1,
+            color.s2,
+            color.s3,
+            color.s4
+        )
 
+        //Accion de refresco
+        binding.swipeLayout.setOnRefreshListener {
+            getListData()
+        }
+
+        // boton LogOt, agrego una escucha al click
         binding.btnLogOut.setOnClickListener {
-            //Creamos un dialog builder para el cierre de sesion
-            val dialogBuilder = AlertDialog.Builder(this)
-            dialogBuilder
-                .setMessage("¿Desea cerrar su sesion?")
-                .setCancelable(false) //No se puede cancelar el dialog
-                .setPositiveButton("Si") { dialog, which ->
-                    logOut()
-                    dialog.dismiss()
-                }
-                .setNegativeButton ("No") { dialog, which ->
-                    dialog.dismiss()
-                }
-            val alert = dialogBuilder.create()
-            alert.setTitle("Cierre de sesion")
-            alert.show()
+            showDialogSignOut()
         }
 
     }
 
+    //Mostramos el dialogo de cierre de sesion:
+    private fun showDialogSignOut() {
+        //Creamos un dialog builder para el cierre de sesion
+        val dialogBuilder = AlertDialog.Builder(this)
+        dialogBuilder
+            .setMessage("¿Desea cerrar su sesion?")
+            .setCancelable(false) //No se puede cancelar el dialog
+            .setPositiveButton("Si") { dialog, which ->
+                logOut()
+                dialog.dismiss()
+            }
+            .setNegativeButton ("No") { dialog, which ->
+                dialog.dismiss()
+            }
+        val alert = dialogBuilder.create()
+        alert.setTitle("Cierre de sesion")
+        alert.show()
+    }
+
+    //Obtenemos los datos de la lista usando el viewModel y los corrutinas
     private fun getListData() {
         viewModel.fetchListData.observe(this@MainListActivity){ result ->
-            when (result){
-                is Resource.Loading -> {  }
-                is Resource.Success -> {
-                    //Le pasamos los datos al adaptador
-                    Log.e("LISTA", result.data.toString())
-                    expandedListAdapter = ExpandedListAdapter(this@MainListActivity, result.data, binding.mainList)
-                    //Notificamos los cambios
-                    expandedListAdapter.notifyDataSetChanged()
-                    //Le instanciamos el adaptador al listView
-                    binding.mainList.setAdapter(expandedListAdapter)
+            if (Connectivity.isOnlineNet() == true){ //Comprobamos que haya conexion a internet:
+                when (result){
+                    is Resource.Loading -> { //Cuando carga los datos:
+                        binding.progressBar.visibility = View.VISIBLE //Mostramos el progressBar
+                    }
+                    is Resource.Success -> { //Cuando se obtienen los datos
+                        initExpandableListView(result.data) //Inicializamos el expandableListView
+                        binding.progressBar.visibility = View.GONE //Ocultamos el progressBar
+                        if (binding.swipeLayout.isRefreshing) {
+                            binding.swipeLayout.isRefreshing = false //Paramos la animacion de refresco
+                        }
+                    }
+                    is Resource.Failure -> { //En caso de fallar:
+                        binding.progressBar.visibility = View.GONE //Paramos el progressBar
+                        Toast.makeText(this, result.exception.toString(), Toast.LENGTH_SHORT).show()
+                        Log.e("FIREBASE ERROR", result.exception.toString())
+                    }
                 }
-                is Resource.Failure -> {  }
             }
-
+            else { //Si no hay conexion:
+                Toast.makeText(this, "No hay conexion a intertet, conectese y acualice lista", Toast.LENGTH_SHORT).show()
+                binding.progressBar.visibility = View.GONE
+            }
         }
+    }
+
+    private fun initExpandableListView(data: ArrayList<ParentModel>) {
+        itemList = data //Pasamos los datos obtenidos a la lista principal
+        expandedListAdapter = ExpandedListAdapter() //Instanciamos el adaptador
+        expandedListAdapter.getList(itemList) //Usamos las funciones que trae dentro para pasarle los datos
+        expandedListAdapter.getContext(this@MainListActivity, binding.mainList) //Aca igual
+        expandedListAdapter.notifyDataSetChanged()//Notificamos los cambios
+        binding.mainList.setAdapter(expandedListAdapter) //Le instanciamos el adaptador al listView
     }
 
     // creo la funcion logOut y llamo a la shared preferences creado en LoginActivity
     // si el usuario clickea en el cierre de sesion, se dirige a la pantalla de Login y cambia es estado del login, pasa de estar activo a inactivo.
-
     private fun logOut() {
-
         dbUser = FirebaseDatabase.getInstance().reference
         dbUser.child("users/$uid/sessions/quantity")
             .setValue(session - 1)
-
         val auth = FirebaseAuth.getInstance()
         auth.signOut()
-
         val sp = getSharedPreferences("my_prefs", Context.MODE_PRIVATE)
-
         with(sp.edit()){
-
             putString("active","false")
             apply()
         }
-
         //paso a la actividad Login, y termino esta actividad.
         startActivity(Intent(this, LoginActivity::class.java))
         finish()
@@ -197,94 +222,6 @@ class MainListActivity : AppCompatActivity() {
         }.addOnFailureListener {
             Log.e("FIREBASE", "Errorr getting data", it)
         }
-    }
-
-    //Obtenemos los datos de los parent
-    private fun getParentData() {
-        //Usamos un contador, por comodidad en la forma en que se presentan los datos en la
-        //base de datos. Los child, en la bd, estan enumerados del 0 al 9
-        //por lo que es mas accesible para buscar los datos
-        var j = 0
-        dbParent = FirebaseDatabase.getInstance().getReference("channels")
-        dbParent.addValueEventListener(object : ValueEventListener{
-            override fun onDataChange(snapshot: DataSnapshot) {
-                if (snapshot.exists()){
-                    for (parentSnapshot in snapshot.children){
-                        val parent: String = parentSnapshot.child("name").value.toString()
-                        //Una vez que obtenemos el parent, buscamos los child que le corresponden
-                        //Pasamos el contador
-                        getChildData(parent, j)
-                        //Aumentamos el contador
-                        j += 1
-                    }
-                }
-            }
-
-            override fun onCancelled(error: DatabaseError) {
-                Log.e("FIREBASE/DATABASE", error.toString())
-            }
-
-        })
-    }
-
-    //Obtenemos los datos de los child
-    private fun getChildData(parent: String, j: Int) {
-        //Instanciamos la base de datos y aqui es donde funciona el contador anterior
-        dbChild = FirebaseDatabase.getInstance().getReference("channels/$j/samples")
-        dbChild.addValueEventListener(object : ValueEventListener{
-            override fun onDataChange(snapshot: DataSnapshot) {
-                if (snapshot.exists()){
-                    for (childSnapshot in snapshot.children){
-                        val child = childSnapshot.getValue(ChildModel::class.java)
-                        //Pasamos los datos del parent y sus child (uno en uno, en este caso)
-                        addItem(parent, child!!)
-                        //Le pasamos los datos al adaptador
-                        expandedListAdapter = ExpandedListAdapter(this@MainListActivity, itemList, binding.mainList)
-                        //Notificamos los cambios
-                        expandedListAdapter.notifyDataSetChanged()
-                        //Le instanciamos el adaptador al listView
-                        binding.mainList.setAdapter(expandedListAdapter)
-                    }
-                }
-            }
-            override fun onCancelled(error: DatabaseError) {
-                Log.e("FIREBASE/DATABASE", error.toString())
-            }
-        })
-    }
-
-    //Funcion para agregar los items en la lista doble
-    private fun addItem(parentItemList: String, subItemList: ChildModel): Int{
-        val parentPosition: Int
-        //Obtenemos la informacion del parent (en el contructor del objeto vemos que
-        //tiene un ingreso de una string (el dato principal) y otro objeto (ChildModel)
-        var parentInfo: ParentModel? = parentItem[parentItemList]
-        //Si el parentInfo esta nulo, creamos uno nuevo y le comenzamos a ingresar los
-        //datos de sus child
-        if (parentInfo == null){
-            parentInfo = ParentModel()
-            parentInfo.name = parentItemList
-            parentItem[parentItemList] = parentInfo
-            itemList.add(parentInfo)
-        }
-        //Aca se comienzan a instanciar los datos de los child, con le index del parent
-        val childItemList: ArrayList<ChildModel> = parentInfo.itemList
-        var listSize = childItemList.size
-        listSize++
-
-        //Instanciamos todos los atributos del objeto ChildModel()
-        val childInfo = ChildModel()
-        childInfo.drm_license_url = subItemList.drm_license_url
-        childInfo.drm_scheme = subItemList.drm_scheme
-        childInfo.icon = subItemList.icon
-        childInfo.name = subItemList.name
-        childInfo.uri = subItemList.uri
-        childItemList.add(childInfo)
-        parentInfo.itemList = childItemList
-
-        parentPosition = childItemList.indexOf(childInfo) //Por ultimo se colocan en la posicion del parent
-
-        return parentPosition
     }
 
     override fun onResume() {

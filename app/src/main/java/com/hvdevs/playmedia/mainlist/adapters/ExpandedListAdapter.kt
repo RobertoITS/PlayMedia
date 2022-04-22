@@ -18,7 +18,23 @@ import com.squareup.picasso.Picasso
  * BaseExpandableListAdapter.
  * Para su funcionalidad, ingresa una lista de tipo constructor, con un constructor dentro (ParentModel)
  * */
-class ExpandedListAdapter(var context: Context, var childList: ArrayList<ParentModel>, var expListView: ExpandableListView): BaseExpandableListAdapter() {
+class ExpandedListAdapter: BaseExpandableListAdapter() {
+
+    //Variables inicializadas para obtener los datos
+    private lateinit var context: Context
+    private lateinit var expandableListView: ExpandableListView
+    private lateinit var childList: ArrayList<ParentModel>
+
+    //Esta funcion se encarga de obtener los datos para pasarlos a la listView
+    fun getList(childList: ArrayList<ParentModel>){
+        this.childList = childList
+    }
+
+    //Obtenemos los contextos
+    fun getContext(context: Context, expandableListView: ExpandableListView){
+        this.context = context
+        this.expandableListView = expandableListView
+    }
 
     //Obtenemos la cuenta del grupo principal
     override fun getGroupCount(): Int {
@@ -73,11 +89,11 @@ class ExpandedListAdapter(var context: Context, var childList: ArrayList<ParentM
             //Aqui colapsamos todas las listas
             for (i in 0 .. childList.size){
                 //Exepto la que esta tocada
-                if (i != parentPosition) expListView.collapseGroup(i)
+                if (i != parentPosition) expandableListView.collapseGroup(i)
             }
             //Aqui controlamos el expand y collapse
-            if (expListView.isGroupExpanded(parentPosition)) expListView.collapseGroup(parentPosition)
-            else expListView.expandGroup(parentPosition)
+            if (expandableListView.isGroupExpanded(parentPosition)) expandableListView.collapseGroup(parentPosition)
+            else expandableListView.expandGroup(parentPosition)
         }
         return currentView
     }

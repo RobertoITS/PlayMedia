@@ -2,11 +2,14 @@ package com.hvdevs.playmedia.mainlist.viewmodel.data.network
 
 import android.util.Log
 import com.google.firebase.database.*
+import com.google.firebase.database.ktx.getValue
 import com.hvdevs.playmedia.mainlist.adapters.ExpandedListAdapter
 import com.hvdevs.playmedia.mainlist.constructor.ChildModel
 import com.hvdevs.playmedia.mainlist.constructor.ParentModel
 import com.hvdevs.playmedia.mainlist.ui.MainListActivity
 import com.hvdevs.playmedia.resourse.Resource
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.tasks.await
 
 class MainListRepoImplement: MainListRepoInterface {
 
@@ -18,51 +21,29 @@ class MainListRepoImplement: MainListRepoInterface {
         //base de datos. Los child, en la bd, estan enumerados del 0 al 9
         //por lo que es mas accesible para buscar los datos
         var j = 0
-        val dbParent: DatabaseReference = FirebaseDatabase.getInstance().getReference("channels")
-        dbParent.addValueEventListener(object : ValueEventListener {
-            override fun onDataChange(snapshot: DataSnapshot) {
-                if (snapshot.exists()){
-                    for (parentSnapshot in snapshot.children){
-                        val parent: String = parentSnapshot.child("name").value.toString()
-                        //Una vez que obtenemos el parent, buscamos los child que le corresponden
-                        //Pasamos el contador
-                        getChildData(parent, j)
-                        //Aumentamos el contador
-                        j += 1
-                    }
-                }
+        val dbParent: DataSnapshot? = FirebaseDatabase.getInstance().getReference("channels").get().await()
+        if (dbParent!!.exists()){
+            for (snapshot in dbParent.children){
+                val parent: String = snapshot.child("name").value.toString()
+                //Una vez que obtenemos el parent, buscamos los child que le corresponden
+                //Pasamos el contador
+                getChildData(parent, j)
+                //Aumentamos el contador
+                j += 1
             }
-
-            override fun onCancelled(error: DatabaseError) {
-                Log.e("FIREBASE/DATABASE", error.toString())
-            }
-
-        })
+        }
         return Resource.Success(itemList) //devuelve la lista
     }
 
-    private fun getChildData(parent: String, j: Int) {
-        val dbChild: DatabaseReference = FirebaseDatabase.getInstance().getReference("channels/$j/samples")
-        dbChild.addValueEventListener(object : ValueEventListener{
-            override fun onDataChange(snapshot: DataSnapshot) {
-                if (snapshot.exists()){
-                    for (childSnapshot in snapshot.children){
-                        val child = childSnapshot.getValue(ChildModel::class.java)
-                        //Pasamos los datos del parent y sus child (uno en uno, en este caso)
-                        addItem(parent, child!!)
-                        //Le pasamos los datos al adaptador
-//                        expandedListAdapter = ExpandedListAdapter(MainListActivity, itemList, binding.mainList)
-                        //Notificamos los cambios
-//                        expandedListAdapter.notifyDataSetChanged()
-                        //Le instanciamos el adaptador al listView
-//                        binding.mainList.setAdapter(expandedListAdapter)
-                    }
-                }
+    private suspend fun getChildData(parent: String, j: Int) {
+        val dbChild: DataSnapshot? = FirebaseDatabase.getInstance().getReference("channels/$j/samples").get().await()
+        if (dbChild!!.exists()){
+            for (snapshot in dbChild.children){
+                val child = snapshot.getValue(ChildModel::class.java)
+                //Pasamos los datos del parent y sus child (uno en uno, en este caso)
+                addItem(parent, child!!)
             }
-            override fun onCancelled(error: DatabaseError) {
-                Log.e("FIREBASE/DATABASE", error.toString())
-            }
-        })
+        }
     }
 
     private fun addItem(parent: String, child: ChildModel): Int {
