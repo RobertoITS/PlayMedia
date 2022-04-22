@@ -29,7 +29,7 @@
         android:theme="@style/Theme.PlayMedia"
         tools:targetApi="n">
         <activity
-            android:name=".splashscreen.SplashScreen"
+            android:name=".splashscreen.ui.SplashScreen"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

@@ -1,4 +1,4 @@
-package com.hvdevs.playmedia.splashscreen
+package com.hvdevs.playmedia.splashscreen.ui
 
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
@@ -21,7 +21,6 @@ import com.hvdevs.playmedia.splashscreen.viewmodel.data.network.VersionRepoImple
 import com.hvdevs.playmedia.splashscreen.viewmodel.domain.VersionUseCaseImplement
 import com.hvdevs.playmedia.splashscreen.viewmodel.presentation.viewmodel.VersionViewModel
 import com.hvdevs.playmedia.splashscreen.viewmodel.presentation.viewmodel.VersionViewModelFactory
-import kotlin.properties.Delegates
 
 class SplashScreen : AppCompatActivity() {
     // creamos la variable auth que gestionara los metodos de inicio de sesion usando el modulo de Auth de Firebase.

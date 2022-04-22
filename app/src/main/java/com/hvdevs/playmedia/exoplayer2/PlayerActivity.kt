@@ -22,12 +22,16 @@ import com.google.android.exoplayer2.decoder.DecoderReuseEvaluation
 import com.google.android.exoplayer2.ext.ima.ImaAdsLoader
 import com.google.android.exoplayer2.source.DefaultMediaSourceFactory
 import com.google.android.exoplayer2.source.MediaSourceFactory
+import com.google.android.exoplayer2.source.dash.DashChunkSource
+import com.google.android.exoplayer2.source.dash.DashMediaSource
+import com.google.android.exoplayer2.source.dash.DefaultDashChunkSource
 import com.google.android.exoplayer2.trackselection.AdaptiveTrackSelection
 import com.google.android.exoplayer2.trackselection.DefaultTrackSelector
 import com.google.android.exoplayer2.ui.*
 import com.google.android.exoplayer2.upstream.DataSource
 import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter
 import com.google.android.exoplayer2.upstream.DefaultDataSource
+import com.google.android.exoplayer2.upstream.DefaultHttpDataSource
 import com.google.android.exoplayer2.util.EventLogger
 import com.google.android.exoplayer2.util.MimeTypes
 import com.google.android.exoplayer2.util.Util
@@ -197,32 +201,42 @@ class PlayerActivity : Activity(), Player.Listener, AnalyticsListener, AdEvent.A
     //Inicializamos es reproductor
     //Las demas funciones viene predeterminadas en el repositorio clonado
     private fun initializePlayer() {
+        val userAgent = "ExoPlayer-Drm"
+        val drmSchemeUuid = C.WIDEVINE_UUID // DRM Type
 
-        val mediaDataSourceFactory: DataSource.Factory =
-            DefaultDataSource.Factory(this)
+        trackSelector = DefaultTrackSelector(this)
+        simpleExoPlayer = SimpleExoPlayer.Builder(this).setTrackSelector(trackSelector).build()
+        playerView = binding.exoPlayerView
+        playerView!!.player = simpleExoPlayer
 
-        val drmConfig: MediaItem.DrmConfiguration =
-            MediaItem.DrmConfiguration.Builder(C.WIDEVINE_UUID)
-                .setLicenseUri(licenceUrl)
-                .build()
+        val defaultHttpDataSourceFactory = DefaultHttpDataSource.Factory()
+            .setUserAgent(userAgent)
+            .setTransferListener(
+                DefaultBandwidthMeter.Builder(this)
+                    .setResetOnNetworkTypeChange(false)
+                    .build()
+            )
 
-        val subtitle: MediaItem.SubtitleConfiguration =
-            MediaItem.SubtitleConfiguration.Builder(Uri.parse(SUBS))
-                .setMimeType(MimeTypes.APPLICATION_SUBRIP)
-                .setLanguage("en")
-                .setSelectionFlags(C.SELECTION_FLAG_AUTOSELECT)
-                .build()
+        val dashChunkSourceFactory: DashChunkSource.Factory = DefaultDashChunkSource.Factory(
+            defaultHttpDataSourceFactory
+        )
 
-        val mediaItem: MediaItem = MediaItem.Builder()
-            .setUri(Uri.parse(streamUrl))
-            .setDrmConfiguration(drmConfig)
-            .setSubtitleConfigurations(ImmutableList.of(subtitle))
-            .build()
+        val manifestDataSourceFactory = DefaultHttpDataSource.Factory().setUserAgent(userAgent)
 
-        val mediaSourceFactory: MediaSourceFactory =
-            DefaultMediaSourceFactory(mediaDataSourceFactory)
-                .setAdsLoaderProvider { adsLoader }
-                .setAdViewProvider(binding.exoPlayerView)
+        val dashMediaSource =
+            DashMediaSource.Factory(dashChunkSourceFactory, manifestDataSourceFactory)
+                .createMediaSource(
+                    MediaItem.Builder()
+                        .setUri(Uri.parse(uri))
+                        // DRM Configuration
+                        .setDrmConfiguration(
+                            MediaItem.DrmConfiguration.Builder(drmSchemeUuid)
+                                .setLicenseUri(licenceUrl).build()
+                        )
+                        .setMimeType(MimeTypes.APPLICATION_MPD)
+                        .setTag(null)
+                        .build()
+                )
 
         val handler = Handler()
         val adaptiveTrackSelection = AdaptiveTrackSelection.Factory()
@@ -235,24 +249,19 @@ class PlayerActivity : Activity(), Player.Listener, AnalyticsListener, AdEvent.A
         }
 
         exoPlayer = ExoPlayer.Builder(this)
-            .setMediaSourceFactory(mediaSourceFactory)
             .setTrackSelector(trackSelector)
             .setBandwidthMeter(bandwidthMeter)
             .setSeekForwardIncrementMs(10000)
             .setSeekBackIncrementMs(10000)
             .build()
 
-        exoPlayer.addMediaItem(mediaItem)
-        exoPlayer.addListener(this)
-
         val mEventLogger = EventLogger(trackSelector)
         exoPlayer.addAnalyticsListener(mEventLogger)
 
         exoPlayer.playWhenReady = true
         binding.exoPlayerView.player = exoPlayer
-        adsLoader?.setPlayer(exoPlayer)
-        binding.exoPlayerView.requestFocus()
-        exoPlayer.play()
+        exoPlayer.setMediaSource(dashMediaSource, true)
+        exoPlayer.prepare()
     }
 
     private fun showDialog() {
@@ -378,8 +387,8 @@ class PlayerActivity : Activity(), Player.Listener, AnalyticsListener, AdEvent.A
     public override fun onStart() {
         super.onStart()
         if (Util.SDK_INT > 23)
-            //Pasamos el comprobador de tiempo de prueba, si es true,
-            //comienza el contador a ir hacia atras
+        //Pasamos el comprobador de tiempo de prueba, si es true,
+        //comienza el contador a ir hacia atras
             if (testContent){
                 Log.d("TIMETEST", time.toString())
                 countDownTimer = object : CountDownTimer(time, 1000) {
