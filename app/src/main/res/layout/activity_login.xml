@@ -5,7 +5,8 @@
     android:layout_height="match_parent"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     tools:context=".login.ui.LoginActivity"
-    android:id="@+id/root">
+    android:id="@+id/root"
+    android:fitsSystemWindows="true">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/progressBarLayout"
@@ -64,10 +65,14 @@
         app:errorEnabled="true"
         style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
 
+        <!--Con el imeOptions actionNext, al presionar enter, pasa al siguiente
+        editText-->
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/user_input"
+            android:inputType="textEmailAddress"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
+            android:layout_height="wrap_content"
+            android:imeOptions="actionNext"/>
 
     </com.google.android.material.textfield.TextInputLayout>
 
@@ -88,6 +93,8 @@
         style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
         app:errorEnabled="true">
 
+        <!--Con el imeOptions actionDopne, al presionar enter, cierra el
+        metodo de entrada-->
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/passwordInput"
             android:layout_width="match_parent"
@@ -107,7 +114,8 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/password"
-        app:layout_constraintVertical_bias=".01"/>
+        app:layout_constraintVertical_bias=".01"
+        android:fitsSystemWindows="true"/>
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

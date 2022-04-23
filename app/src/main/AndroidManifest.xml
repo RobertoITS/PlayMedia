@@ -58,9 +58,11 @@
         <activity
             android:name=".mainlist.ui.MainListActivity"
             android:exported="false" />
+        <!--Con windowSoftInputMode ajustamos la pantalla al verse el teclado-->
         <activity
             android:name=".login.ui.LoginActivity"
             android:configChanges="keyboardHidden"
+            android:windowSoftInputMode="adjustResize"
             android:exported="false">
         </activity>
     </application>

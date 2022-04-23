@@ -6,11 +6,14 @@ import android.content.ContentValues.TAG
 import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
+import android.text.InputType
 import android.util.Log
+import android.view.KeyEvent
 import android.view.View
 import android.view.ViewAnimationUtils
 import android.view.animation.CycleInterpolator
 import android.view.animation.TranslateAnimation
+import android.view.inputmethod.EditorInfo
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -53,6 +56,30 @@ class LoginActivity : AppCompatActivity() {
 
         auth = FirebaseAuth.getInstance()
 
+        binding.userInput.setOnKeyListener { v, keyCode, event -> //Escuchador de teclas
+            when (keyCode) { //Si la keyCode es igual a enter, pasa al siguiente editText
+                KeyEvent.KEYCODE_ENTER -> {
+                    binding.passwordInput.requestFocus()
+                    return@setOnKeyListener true
+                }
+                else -> {
+                    return@setOnKeyListener false
+                }
+            }
+        }
+
+        binding.passwordInput.setOnKeyListener { v, keyCode, event -> //Lo mismo para el editText de password
+            when (keyCode) {
+                KeyEvent.KEYCODE_ENTER -> {
+                    binding.userLogin.requestFocus()
+                    return@setOnKeyListener true
+                }
+                else -> {
+                    return@setOnKeyListener false
+                }
+            }
+        }
+
         binding.userInput.setOnFocusChangeListener { view, b ->
             if (!b){
                 if ("@" !in binding.userInput.text!!) {
@@ -60,7 +87,9 @@ class LoginActivity : AppCompatActivity() {
                     binding.user.startAnimation(shakeError())
                 }
                 else binding.user.error = null
-            } else binding.user.error = null
+            } else {
+                binding.user.error = null
+            }
         }
 
         binding.passwordInput.setOnFocusChangeListener { v, hasFocus ->
