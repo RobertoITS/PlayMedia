@@ -3,6 +3,7 @@
   <component name="DesignSurface">
     <option name="filePathToZoomLevelMap">
       <map>
+        <entry key="..\:/Users/Giuliana/Desktop/Roberto/Proyectos/BASANI/PlayMedia/app/src/main/res/drawable/button_shape.xml" value="0.122" />
         <entry key="..\:/Users/Giuliana/Desktop/Roberto/Proyectos/BASANI/PlayMedia/app/src/main/res/drawable/ic_baseline_forward_10_24.xml" value="0.122" />
         <entry key="..\:/Users/Giuliana/Desktop/Roberto/Proyectos/BASANI/PlayMedia/app/src/main/res/drawable/ic_baseline_pause_24.xml" value="0.122" />
         <entry key="..\:/Users/Giuliana/Desktop/Roberto/Proyectos/BASANI/PlayMedia/app/src/main/res/drawable/ic_baseline_play_arrow_24.xml" value="0.122" />
@@ -11,7 +12,9 @@
         <entry key="..\:/Users/Giuliana/Desktop/Roberto/Proyectos/BASANI/PlayMedia/app/src/main/res/drawable/ic_lock.xml" value="0.1025" />
         <entry key="..\:/Users/Giuliana/Desktop/Roberto/Proyectos/BASANI/PlayMedia/app/src/main/res/layout/activity_login.xml" value="0.20416666666666666" />
         <entry key="..\:/Users/Giuliana/Desktop/Roberto/Proyectos/BASANI/PlayMedia/app/src/main/res/layout/activity_main.xml" value="0.14722222222222223" />
+        <entry key="..\:/Users/Giuliana/Desktop/Roberto/Proyectos/BASANI/PlayMedia/app/src/main/res/layout/activity_main_list_view.xml" value="0.5" />
         <entry key="..\:/Users/Giuliana/Desktop/Roberto/Proyectos/BASANI/PlayMedia/app/src/main/res/layout/activity_player.xml" value="0.20416666666666666" />
+        <entry key="..\:/Users/Giuliana/Desktop/Roberto/Proyectos/BASANI/PlayMedia/app/src/main/res/layout/activity_splash_screen.xml" value="0.20416666666666666" />
         <entry key="..\:/Users/Giuliana/Desktop/Roberto/Proyectos/BASANI/PlayMedia/app/src/main/res/layout/card_channel.xml" value="0.33" />
         <entry key="..\:/Users/Giuliana/Desktop/Roberto/Proyectos/BASANI/PlayMedia/app/src/main/res/layout/card_main.xml" value="0.20416666666666666" />
         <entry key="..\:/Users/Giuliana/Desktop/Roberto/Proyectos/BASANI/PlayMedia/app/src/main/res/layout/controls_layout.xml" value="0.18333333333333332" />
@@ -20,32 +23,31 @@
         <entry key="..\:/Users/Giuliana/Desktop/Roberto/Proyectos/BASANI/PlayMedia/app/src/main/res/layout/fragment_login.xml" value="0.14722222222222223" />
         <entry key="..\:/Users/Giuliana/Desktop/Roberto/Proyectos/BASANI/PlayMedia/app/src/main/res/layout/fragment_main.xml" value="0.20416666666666666" />
         <entry key="..\:/Users/Giuliana/Desktop/Roberto/Proyectos/BASANI/PlayMedia/app/src/main/res/layout/fragment_media.xml" value="0.20416666666666666" />
-        <entry key="..\:/Users/Giuliana/Desktop/Roberto/Proyectos/BASANI/PlayMedia/app/src/main/res/layout/layout_child.xml" value="0.20416666666666666" />
-        <entry key="..\:/Users/Giuliana/Desktop/Roberto/Proyectos/BASANI/PlayMedia/app/src/main/res/layout/layout_group.xml" value="0.20416666666666666" />
+        <entry key="..\:/Users/Giuliana/Desktop/Roberto/Proyectos/BASANI/PlayMedia/app/src/main/res/layout/layout_child.xml" value="0.33" />
+        <entry key="..\:/Users/Giuliana/Desktop/Roberto/Proyectos/BASANI/PlayMedia/app/src/main/res/layout/layout_group.xml" value="0.33" />
         <entry key="..\:/Users/Giuliana/Desktop/Roberto/Proyectos/BASANI/PlayMedia/app/src/main/res/layout/player_activity.xml" value="0.18333333333333332" />
         <entry key="..\:/Users/Giuliana/Desktop/Roberto/Proyectos/BASANI/PlayMedia/app/src/main/res/layout/track_selection_dialog.xml" value="0.20416666666666666" />
         <entry key="..\:/Users/Giuliana/Desktop/Roberto/Proyectos/BASANI/PlayMedia/app/src/main/res/layout/ustom_controls.xml" value="0.20416666666666666" />
-        <entry key="app/src/main/res/drawable-v24/ic_launcher_foreground.xml" value="0.1465" />
-        <entry key="app/src/main/res/drawable/circular.xml" value="0.1465" />
-        <entry key="app/src/main/res/drawable/ic_baseline_arrow_back_24.xml" value="0.1465" />
-        <entry key="app/src/main/res/drawable/ic_baseline_forward_10_24.xml" value="0.1465" />
-        <entry key="app/src/main/res/drawable/ic_baseline_fullscreen_24.xml" value="0.1465" />
-        <entry key="app/src/main/res/drawable/ic_baseline_pause_24.xml" value="0.1465" />
-        <entry key="app/src/main/res/drawable/ic_baseline_play_arrow_24.xml" value="0.1465" />
-        <entry key="app/src/main/res/drawable/ic_baseline_replay_10_24.xml" value="0.1465" />
-        <entry key="app/src/main/res/drawable/ic_baseline_screen_rotation_24.xml" value="0.1465" />
-        <entry key="app/src/main/res/drawable/ic_baseline_settings_24.xml" value="0.1465" />
-        <entry key="app/src/main/res/drawable/ic_settings.xml" value="0.1465" />
-        <entry key="app/src/main/res/layout/activity_login.xml" value="0.22" />
+        <entry key="..\:/Users/Giuliana/Desktop/Roberto/Proyectos/PlayMedia/app/src/main/res/drawable/progress_bar_bkg.xml" value="0.1025" />
+        <entry key="..\:/Users/Giuliana/Desktop/Roberto/Proyectos/PlayMedia/app/src/main/res/layout/activity_login.xml" value="0.18" />
+        <entry key="..\:/Users/Giuliana/Desktop/Roberto/Proyectos/PlayMedia/app/src/main/res/layout/activity_player.xml" value="0.17314814814814813" />
+        <entry key="..\:/Users/Giuliana/Desktop/Roberto/Proyectos/PlayMedia/app/src/main/res/layout/custom_controls.xml" value="0.17314814814814813" />
+        <entry key="app/src/main/res/drawable/default_background.xml" value="0.231" />
+        <entry key="app/src/main/res/drawable/ic_baseline_arrow_back.xml" value="0.231" />
+        <entry key="app/src/main/res/layout/activity_login.xml" value="0.3234375" />
         <entry key="app/src/main/res/layout/activity_main.xml" value="0.17119565217391305" />
-        <entry key="app/src/main/res/layout/activity_main_list_view.xml" value="0.21" />
-        <entry key="app/src/main/res/layout/activity_player.xml" value="0.11277173913043478" />
-        <entry key="app/src/main/res/layout/controls_layout.xml" value="0.1" />
-        <entry key="app/src/main/res/layout/custom_controls.xml" value="0.11277173913043478" />
+        <entry key="app/src/main/res/layout/activity_main_list_view.xml" value="0.3234375" />
+        <entry key="app/src/main/res/layout/activity_splash_screen.xml" value="0.2574074074074074" />
+        <entry key="app/src/main/res/layout/activity_tv_main.xml" value="0.31302083333333336" />
+        <entry key="app/src/main/res/layout/activity_tvmain_list.xml" value="0.3234375" />
+        <entry key="app/src/main/res/layout/channel_item.xml" value="0.33" />
+        <entry key="app/src/main/res/layout/layout_group.xml" value="0.3234375" />
+        <entry key="app/src/main/res/layout/row_item.xml" value="0.3234375" />
+        <entry key="app/src/main/res/mipmap-anydpi-v26/ic_logo_telunive_tv.xml" value="0.231" />
       </map>
     </option>
   </component>
-  <component name="ProjectRootManager" version="2" languageLevel="JDK_11" default="true" project-jdk-name="Android Studio default JDK" project-jdk-type="JavaSDK">
+  <component name="ProjectRootManager" version="2" languageLevel="JDK_11" default="true" project-jdk-name="1.8" project-jdk-type="JavaSDK">
     <output url="file://$PROJECT_DIR$/build/classes" />
   </component>
   <component name="ProjectType">

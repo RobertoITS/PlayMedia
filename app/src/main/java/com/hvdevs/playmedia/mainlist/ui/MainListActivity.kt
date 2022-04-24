@@ -2,6 +2,7 @@ package com.hvdevs.playmedia.mainlist.ui
 
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -41,6 +42,8 @@ class MainListActivity : AppCompatActivity() {
     private var testContent = false //Controla el contenido de prueba
     private var session = 0 //Sesiones activas del usuario
 
+    private var isTv: Boolean = false
+
     private val viewModel by lazy {
         ViewModelProvider(
             this,
@@ -52,6 +55,9 @@ class MainListActivity : AppCompatActivity() {
         binding = ActivityMainListViewBinding.inflate(layoutInflater)
         super.onCreate(savedInstanceState)
         setContentView(binding.root)
+
+        // chequeamos si es tv
+        isTv = isTv()
 
         //Obtenemos el bundle de la actividad anterior
         val bundle: Bundle? = intent.extras
@@ -65,6 +71,8 @@ class MainListActivity : AppCompatActivity() {
 
         //Obtenemos los datos de la lista principal
         getListData()
+
+
 
         //El click listener de los child en la lista principal
         binding.mainList.setOnChildClickListener { expandableListView, view, parentPosition, childPosition, long ->
@@ -222,6 +230,10 @@ class MainListActivity : AppCompatActivity() {
         }.addOnFailureListener {
             Log.e("FIREBASE", "Errorr getting data", it)
         }
+    }
+
+    private fun isTv(): Boolean {
+        return (packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK))
     }
 
     override fun onResume() {

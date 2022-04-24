@@ -7,20 +7,22 @@
     <uses-sdk />
 
     <uses-permission android:name="android.permission.INTERNET" />
+
+    <uses-feature
+        android:name="android.hardware.touchscreen"
+        android:required="false" />
+    <uses-feature
+        android:name="android.software.leanback"
+        android:required="false" />
+
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 
-    <uses-feature
-        android:name="android.software.leanback"
-        android:required="false" />
-    <uses-feature
-        android:name="android.hardware.touchscreen"
-        android:required="false" />
-
     <application
         android:allowBackup="true"
+        android:banner="@drawable/banner_foreground"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:networkSecurityConfig="@xml/network_security_config"
@@ -29,12 +31,16 @@
         android:theme="@style/Theme.PlayMedia"
         tools:targetApi="n">
         <activity
+            android:name=".mainlist.ui.TVMainListActivity"
+            android:exported="false" />
+        <activity
             android:name=".splashscreen.ui.SplashScreen"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
             </intent-filter>
         </activity>
         <activity
@@ -57,14 +63,12 @@
         </activity>
         <activity
             android:name=".mainlist.ui.MainListActivity"
-            android:exported="false" />
-        <!--Con windowSoftInputMode ajustamos la pantalla al verse el teclado-->
+            android:exported="false" /> <!-- Con windowSoftInputMode ajustamos la pantalla al verse el teclado -->
         <activity
             android:name=".login.ui.LoginActivity"
             android:configChanges="keyboardHidden"
-            android:windowSoftInputMode="adjustResize"
-            android:exported="false">
-        </activity>
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize"></activity>
     </application>
 
 </manifest>

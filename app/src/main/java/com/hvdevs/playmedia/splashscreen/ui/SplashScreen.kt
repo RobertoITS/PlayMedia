@@ -1,6 +1,7 @@
 package com.hvdevs.playmedia.splashscreen.ui
 
 import android.content.Intent
+import android.content.pm.PackageManager
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Handler
@@ -21,6 +22,7 @@ import com.hvdevs.playmedia.splashscreen.viewmodel.data.network.VersionRepoImple
 import com.hvdevs.playmedia.splashscreen.viewmodel.domain.VersionUseCaseImplement
 import com.hvdevs.playmedia.splashscreen.viewmodel.presentation.viewmodel.VersionViewModel
 import com.hvdevs.playmedia.splashscreen.viewmodel.presentation.viewmodel.VersionViewModelFactory
+import com.hvdevs.playmedia.tv.TvMainActivity
 
 class SplashScreen : AppCompatActivity() {
     // creamos la variable auth que gestionara los metodos de inicio de sesion usando el modulo de Auth de Firebase.
@@ -28,6 +30,8 @@ class SplashScreen : AppCompatActivity() {
     private lateinit var binding: ActivitySplashScreenBinding
     private var session = 0
     private var actualVersion = 0
+
+    private var isTV: Boolean = false
 
     private val viewModel by lazy {
         ViewModelProvider(
@@ -48,6 +52,11 @@ class SplashScreen : AppCompatActivity() {
         binding.container.alpha = 0f
         binding.container.animate().alpha(1f).setDuration(1200).setStartDelay(600).start()
 
+
+        //MSO: Chequeamos si es Android TV
+
+        isTV = isTv()
+
         // obtenemos instancia de FirebaseAuth
         auth = FirebaseAuth.getInstance()
         // decimos que si current user esta vacio, el usuario no ha iniciado sesion, con lo cual lo mandamos la pagina de registro o login, usando la funcion debounce.
@@ -62,9 +71,11 @@ class SplashScreen : AppCompatActivity() {
             dbUser.addOnSuccessListener {
                 session = Integer.parseInt(it.value.toString())
             }
-            val intent = Intent(this, MainListActivity::class.java)
-            intent.putExtra("uid", uid)
-            debounce(intent)
+
+                val intent = Intent(this, MainListActivity::class.java)
+                intent.putExtra("uid", uid)
+                debounce(intent)
+
         }
 
     }
@@ -121,5 +132,9 @@ class SplashScreen : AppCompatActivity() {
         }
         val currentVersion = BuildConfig.VERSION_CODE
         return currentVersion < actualVersion
+    }
+
+    private fun isTv(): Boolean {
+        return (packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK))
     }
 }
