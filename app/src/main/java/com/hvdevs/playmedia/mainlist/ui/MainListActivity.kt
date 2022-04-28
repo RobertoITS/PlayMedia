@@ -3,7 +3,6 @@ package com.hvdevs.playmedia.mainlist.ui
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -15,9 +14,9 @@ import androidx.lifecycle.ViewModelProvider
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
-import com.hvdevs.playmedia.R.color
 import com.hvdevs.playmedia.databinding.ActivityMainListViewBinding
 import com.hvdevs.playmedia.exoplayer2.PlayerActivity
+import com.hvdevs.playmedia.exoplayer2.leanbackforandroidtv.LeanbackActivity
 import com.hvdevs.playmedia.login.constructor.User
 import com.hvdevs.playmedia.login.ui.LoginActivity
 import com.hvdevs.playmedia.mainlist.adapters.ExpandedListAdapter
@@ -36,7 +35,7 @@ class MainListActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainListViewBinding //El viewBinding
 
-    private var itemList: ArrayList<ParentModel> = arrayListOf() //Lista solo del parent
+    private lateinit var itemList: ArrayList<ParentModel> //Lista solo del parent
     private lateinit var expandedListAdapter: ExpandedListAdapter //El adaptador del expandedListView
 
     private lateinit var dbUser: DatabaseReference //Referencia a la bd del usuario
@@ -47,7 +46,7 @@ class MainListActivity : AppCompatActivity() {
 
     private var isTv: Boolean = false
 
-    private val viewModel by lazy {
+    private val viewModel by lazy { //Instanciamos el view model con sus implementos usando el Factory
         ViewModelProvider(
             this,
             MainListViewModelFactory(MainListUseCaseImplement(MainListRepoImplement()))
@@ -82,7 +81,11 @@ class MainListActivity : AppCompatActivity() {
         binding.mainList.setOnChildClickListener { expandableListView, view, parentPosition, childPosition, long ->
             val parentInfo = itemList[parentPosition]
             val childInfo = parentInfo.itemList[childPosition]
-            val intent = Intent(this, PlayerActivity::class.java)
+
+            //Pasamos el intent dependiendo del dispositivo
+            val intent: Intent = if (isTv) Intent(this, LeanbackActivity::class.java)
+            else Intent(this, PlayerActivity::class.java)
+
             //Pasamos la licencia y la uri para el reproductor
             intent.putExtra("licence", childInfo.drm_license_url)
             intent.putExtra("uri", childInfo.uri)
@@ -107,37 +110,37 @@ class MainListActivity : AppCompatActivity() {
                 }
                 1 -> {
 
-//                    //Formateador de las fechas por patron
-//                    val formatter: DateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
-//                    //Parseamos la fecha obtenida de la db
-//                    val serverDate = LocalDate.parse(userData?.expire.toString(), DateTimeFormatter.ofPattern("dd/MM/yyyy"))
-//                    //La formateamos
-//                    val serverDateFormatted = formatter.format(serverDate)
-//                    //Obtenemos la fecha del dispositivo (local)
-//                    val localDate = LocalDate.now()
-//                    //La formateamos
-//                    val localDateFormatted = formatter.format(localDate)
-//                    //Si la fecha es mayor, reproduce el contenido
-//                    if (serverDateFormatted < localDateFormatted){
-//                        //Pasamos si es contenido de prueba o no
-//                        intent.putExtra("testContent", testContent)
+                    //Formateador de las fechas por patron
+                    val formatter: DateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
+                    //Parseamos la fecha obtenida de la db
+                    val serverDate = LocalDate.parse(userData?.expire.toString(), DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+                    //La formateamos
+                    val serverDateFormatted = formatter.format(serverDate)
+                    //Obtenemos la fecha del dispositivo (local)
+                    val localDate = LocalDate.now()
+                    //La formateamos
+                    val localDateFormatted = formatter.format(localDate)
+                    //Si la fecha es mayor, reproduce el contenido
+                    if (serverDateFormatted < localDateFormatted){
+                        //Pasamos si es contenido de prueba o no
+                        intent.putExtra("testContent", testContent)
                         startActivity(intent)
-//                    //Caso contrario, no lo reproduce
-//                    } else {
-//                        Toast.makeText(this, "Su licencia expiró", Toast.LENGTH_SHORT).show()
-//                    }
+                    //Caso contrario, no lo reproduce
+                    } else {
+                        Toast.makeText(this, "Su licencia expiró", Toast.LENGTH_SHORT).show()
+                    }
                 }
             }
             false
         }
 
         //Le agregamos estilo a los colores del refresco
-        binding.swipeLayout.setColorSchemeResources(
-            color.s1,
-            color.s2,
-            color.s3,
-            color.s4
-        )
+//        binding.swipeLayout.setColorSchemeResources(
+//            color.s1,
+//            color.s2,
+//            color.s3,
+//            color.s4
+//        )
 
         //Accion de refresco
         binding.swipeLayout.setOnRefreshListener {
@@ -195,11 +198,13 @@ class MainListActivity : AppCompatActivity() {
             else { //Si no hay conexion:
                 Toast.makeText(this, "No hay conexion a intertet, conectese y acualice lista", Toast.LENGTH_SHORT).show()
                 binding.progressBar.visibility = View.GONE
+                binding.swipeLayout.isRefreshing = false //Paramos la animacion de refresco
             }
         }
     }
 
     private fun initExpandableListView(data: ArrayList<ParentModel>) {
+        itemList = arrayListOf()
         itemList = data //Pasamos los datos obtenidos a la lista principal
         expandedListAdapter = ExpandedListAdapter() //Instanciamos el adaptador
         expandedListAdapter.getList(itemList) //Usamos las funciones que trae dentro para pasarle los datos

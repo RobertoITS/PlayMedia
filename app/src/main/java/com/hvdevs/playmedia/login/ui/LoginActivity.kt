@@ -188,6 +188,9 @@ class LoginActivity : AppCompatActivity() {
 //    }
 
     private fun login(user: String, password: String){
+        binding.passwordInput.isEnabled = false
+        binding.userInput.isEnabled = false
+        binding.userLogin.isClickable = false
         auth.signInWithEmailAndPassword(user, password)
             .addOnCompleteListener (this) { task: Task<AuthResult> ->
                 if (task.isSuccessful){
@@ -195,6 +198,9 @@ class LoginActivity : AppCompatActivity() {
                     startNewSession()
                     Log.d("FIREBASE", uid)
                 } else {
+                    binding.passwordInput.isEnabled = true
+                    binding.userInput.isEnabled = true
+                    binding.userLogin.isClickable = true
                     revealLayoutAnimation(binding.progressBarLayout, true)
                     try {
                         throw task.exception!!
