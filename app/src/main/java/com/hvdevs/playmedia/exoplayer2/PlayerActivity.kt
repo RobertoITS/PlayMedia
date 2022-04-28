@@ -89,9 +89,10 @@ class PlayerActivity : Activity(), Player.Listener, AnalyticsListener, AdEvent.A
         binding = ActivityPlayerBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        val sp = getSharedPreferences("videoData", 0)
         val bundle: Bundle? = intent.extras
-        uri = bundle?.getString("uri").toString()
-        drm = bundle?.getString("licence").toString()
+        uri = sp?.getString("uri", "").toString()
+        drm = sp?.getString("licence", "").toString()
         uid = bundle?.getString("uid").toString()
         time = bundle!!.getLong("time")
         Log.d("TIMETEST", time.toString())

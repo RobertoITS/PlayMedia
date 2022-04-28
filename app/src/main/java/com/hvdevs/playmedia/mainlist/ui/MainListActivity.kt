@@ -17,6 +17,7 @@ import com.google.firebase.database.FirebaseDatabase
 import com.hvdevs.playmedia.databinding.ActivityMainListViewBinding
 import com.hvdevs.playmedia.exoplayer2.PlayerActivity
 import com.hvdevs.playmedia.exoplayer2.leanbackforandroidtv.LeanbackActivity
+import com.hvdevs.playmedia.exoplayer2.leanbackforandroidtv.LeanbackFragmentPlayer
 import com.hvdevs.playmedia.login.constructor.User
 import com.hvdevs.playmedia.login.ui.LoginActivity
 import com.hvdevs.playmedia.mainlist.adapters.ExpandedListAdapter
@@ -44,7 +45,7 @@ class MainListActivity : AppCompatActivity() {
     private var testContent = false //Controla el contenido de prueba
     private var session = 0 //Sesiones activas del usuario
 
-    private var isTv: Boolean = false
+//    private var isTv: Boolean = false
 
     private val viewModel by lazy { //Instanciamos el view model con sus implementos usando el Factory
         ViewModelProvider(
@@ -60,7 +61,7 @@ class MainListActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         // chequeamos si es tv
-        isTv = isTv()
+//        isTv = isTv()
 
         //Obtenemos el bundle de la actividad anterior
         val bundle: Bundle? = intent.extras
@@ -82,8 +83,20 @@ class MainListActivity : AppCompatActivity() {
             val parentInfo = itemList[parentPosition]
             val childInfo = parentInfo.itemList[childPosition]
 
+            //Shared Preferences
+            //Para el fragment que lo reproduce, solo le pasamos esta informacion, la actividad recibe el resto
+            val sp = getSharedPreferences("videoData", Context.MODE_PRIVATE)
+            with(sp.edit()) {
+
+                putString("uri", childInfo.uri)
+                putString("licence", childInfo.drm_license_url)
+
+                apply()
+            }
+
             //Pasamos el intent dependiendo del dispositivo
-            val intent: Intent = if (isTv) Intent(this, LeanbackActivity::class.java)
+            val intent: Intent = if (isTv()/*No necesitamos crear un variable!*/)
+                Intent(this, LeanbackActivity::class.java)
             else Intent(this, PlayerActivity::class.java)
 
             //Pasamos la licencia y la uri para el reproductor

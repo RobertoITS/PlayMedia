@@ -1,10 +1,8 @@
 package com.hvdevs.playmedia.exoplayer2.leanbackforandroidtv
 
 import android.net.Uri
+import android.widget.Toast
 import androidx.leanback.app.PlaybackSupportFragment
-import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory
-import com.google.android.exoplayer2.source.MediaSource
-import com.google.android.exoplayer2.source.hls.HlsMediaSource
 import com.google.android.exoplayer2.ui.PlayerView
 import com.hvdevs.playmedia.R
 import androidx.leanback.media.PlayerAdapter
@@ -15,7 +13,6 @@ import com.google.android.exoplayer2.*
 import com.google.android.exoplayer2.source.dash.DashChunkSource
 import com.google.android.exoplayer2.source.dash.DashMediaSource
 import com.google.android.exoplayer2.source.dash.DefaultDashChunkSource
-import com.google.android.exoplayer2.upstream.DataSource
 import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter
 import com.google.android.exoplayer2.upstream.DefaultHttpDataSource
 import com.google.android.exoplayer2.util.MimeTypes
@@ -25,10 +22,14 @@ class LeanbackFragmentPlayer : PlaybackSupportFragment(), Player.Listener,
     VideoPlayerGlue.OnActionClickedListener {
     private var player: SimpleExoPlayer? = null
     private var playerGlue: VideoPlayerGlue? = null
-    private fun preparePlayer(player: ExoPlayer, videoUri: String) {
 
-        val uri = "https://chromecast.cvattv.com.ar/live/c3eds/AmericaTV/SA_Live_dash_enc_2A/AmericaTV.mpd"
-        val licenceUrl = "https://wv-client.cvattv.com.ar/?deviceId=Y2MzZWViN2QwNDZjNjZkZTQyNmE4NmE1ZGMxY2JmNWY="
+    private fun preparePlayer(player: ExoPlayer) {
+
+        //Obtenemos el shared preferences
+        val sp = activity?.getSharedPreferences("videoData", 0)
+
+        val uri = sp?.getString("uri", "")
+        val licenceUrl = sp?.getString("licence", "")
 
         val userAgent = "ExoPlayer-Drm"
         val drmSchemeUuid = C.WIDEVINE_UUID // DRM Type
@@ -62,16 +63,6 @@ class LeanbackFragmentPlayer : PlaybackSupportFragment(), Player.Listener,
                         .build()
                 )
 
-        // Produces DataSource instances through which media data is loaded.
-        val dataSourceFactory: DataSource.Factory = DefaultDataSourceFactory(
-            requireContext(),
-            Util.getUserAgent(requireContext(), "receiver")
-        )
-
-        // This is the MediaSource representing the media to be played.
-        val videoSource: MediaSource = HlsMediaSource.Factory(dataSourceFactory)
-            .createMediaSource(MediaItem.fromUri(videoUri))
-
         // Prepare the player with the source.
         player.setMediaSource(dashMediaSource, true)
         player.prepare()
@@ -86,9 +77,7 @@ class LeanbackFragmentPlayer : PlaybackSupportFragment(), Player.Listener,
         playerGlue!!.host = PlaybackSupportFragmentGlueHost(this)
         playerGlue!!.playWhenPrepared()
         adapter = ArrayObjectAdapter()
-        val url =
-            "https://multiplatform-f.akamaihd.net/i/multi/will/bunny/big_buck_bunny_,640x360_400,640x360_700,640x360_1000,950x540_1500,.f4v.csmil/master.m3u8"
-        preparePlayer(player!!, url)
+        preparePlayer(player!!)
     }
 
     private fun releasePlayer() {
@@ -126,6 +115,11 @@ class LeanbackFragmentPlayer : PlaybackSupportFragment(), Player.Listener,
         }
     }
 
-    override fun onPrevious() {}
-    override fun onNext() {}
+    //Estas son las fuciones de la interface implementada en el VideoPlayerGlue
+    override fun onPrevious() {
+        Toast.makeText(context, "Probando botones y su accion", Toast.LENGTH_SHORT).show()
+    }
+    override fun onNext() {
+        Toast.makeText(context, "Probando botones y su accion", Toast.LENGTH_SHORT).show()
+    }
 }

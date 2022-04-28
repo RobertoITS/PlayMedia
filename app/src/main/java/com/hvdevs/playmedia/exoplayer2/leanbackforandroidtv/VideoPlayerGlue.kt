@@ -77,6 +77,7 @@ class VideoPlayerGlue(
 //        adapter.add(mPictureAction);
     }
 
+    //Aca se manejan las acciones aparentemente
     override fun onActionClicked(action: Action) {
         if (shouldDispatchAction(action)) {
             if (action === mFastForwardAction) {
