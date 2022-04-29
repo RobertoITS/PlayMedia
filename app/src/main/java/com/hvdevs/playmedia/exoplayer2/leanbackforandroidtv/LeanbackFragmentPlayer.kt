@@ -122,4 +122,8 @@ class LeanbackFragmentPlayer : PlaybackSupportFragment(), Player.Listener,
     override fun onNext() {
         Toast.makeText(context, "Probando botones y su accion", Toast.LENGTH_SHORT).show()
     }
+
+    override fun onSettings() {
+        Toast.makeText(context, "Probando botones y su accion", Toast.LENGTH_SHORT).show()
+    }
 }

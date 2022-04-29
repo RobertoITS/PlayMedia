@@ -1,6 +1,9 @@
 package com.hvdevs.playmedia.exoplayer2.leanbackforandroidtv
 
 import android.content.Context
+import android.content.res.Resources
+import android.graphics.drawable.Drawable
+import androidx.core.content.ContextCompat
 import androidx.leanback.media.PlayerAdapter
 import androidx.leanback.media.PlaybackTransportControlGlue
 import androidx.leanback.widget.Action
@@ -16,6 +19,7 @@ import androidx.leanback.widget.PlaybackControlsRow.ShuffleAction
 import androidx.leanback.widget.PlaybackControlsRow.PictureInPictureAction
 import androidx.leanback.widget.ArrayObjectAdapter
 import androidx.leanback.widget.PlaybackControlsRow
+import com.hvdevs.playmedia.R
 import java.util.concurrent.TimeUnit
 
 /**
@@ -47,13 +51,15 @@ class VideoPlayerGlue(
 
         /** Skip to the next item in the queue.  */
         fun onNext()
+
+        fun onSettings()
     }
 
     private val mRepeatAction: RepeatAction
     private val mThumbsUpAction: ThumbsUpAction = ThumbsUpAction(context)
     private val mThumbsDownAction: ThumbsDownAction
-    private val mSkipPreviousAction: SkipPreviousAction = SkipPreviousAction(context)
-    private val mSkipNextAction: SkipNextAction = SkipNextAction(context)
+//    private val mSkipPreviousAction: SkipPreviousAction = SkipPreviousAction(context)
+//    private val mSkipNextAction: SkipNextAction = SkipNextAction(context)
     private val mFastForwardAction: FastForwardAction = FastForwardAction(context)
     private val mRewindAction: RewindAction = RewindAction(context)
     private val mClosedCaptionAction: ClosedCaptioningAction
@@ -62,19 +68,21 @@ class VideoPlayerGlue(
     override fun onCreatePrimaryActions(adapter: ArrayObjectAdapter) {
         super.onCreatePrimaryActions(adapter)
         adapter.add(mRewindAction)
-        adapter.add(mSkipPreviousAction)
-        adapter.add(mSkipNextAction)
+//        adapter.add(mSkipPreviousAction)
+//        adapter.add(mSkipNextAction)
         adapter.add(mFastForwardAction)
     }
 
     override fun onCreateSecondaryActions(adapter: ArrayObjectAdapter) {
         super.onCreateSecondaryActions(adapter)
 
-//        adapter.add(mThumbsDownAction);
-//        adapter.add(mThumbsUpAction);
-//        adapter.add(mShuffleAction);
-//        adapter.add(mClosedCaptionAction);
-//        adapter.add(mPictureAction);
+        adapter.add(mThumbsDownAction);
+        adapter.add(mThumbsUpAction);
+        adapter.add(mShuffleAction);
+        adapter.add(mClosedCaptionAction)
+        adapter.add(mPictureAction)
+        //Botones secundarios, le agregamos los iconos
+        mPictureAction.icon = ContextCompat.getDrawable(context, R.drawable.ic_baseline_settings_24)
     }
 
     //Aca se manejan las acciones aparentemente
@@ -82,6 +90,10 @@ class VideoPlayerGlue(
         if (shouldDispatchAction(action)) {
             if (action === mFastForwardAction) {
                 playerAdapter!!.seekTo(playerAdapter!!.currentPosition + 60000)
+            }
+
+            if (action === mPictureAction){
+                mActionListener.onSettings()
             }
             return
         }
