@@ -58,39 +58,39 @@ class VideoPlayerGlue(
     private val mRepeatAction: RepeatAction
     private val mThumbsUpAction: ThumbsUpAction = ThumbsUpAction(context)
     private val mThumbsDownAction: ThumbsDownAction
-//    private val mSkipPreviousAction: SkipPreviousAction = SkipPreviousAction(context)
-//    private val mSkipNextAction: SkipNextAction = SkipNextAction(context)
-    private val mFastForwardAction: FastForwardAction = FastForwardAction(context)
-    private val mRewindAction: RewindAction = RewindAction(context)
+    private val mSkipPreviousAction: SkipPreviousAction = SkipPreviousAction(context)
+    private val mSkipNextAction: SkipNextAction = SkipNextAction(context)
+//    private val mFastForwardAction: FastForwardAction = FastForwardAction(context)
+//    private val mRewindAction: RewindAction = RewindAction(context)
     private val mClosedCaptionAction: ClosedCaptioningAction
     private val mShuffleAction: ShuffleAction
     private val mPictureAction: PictureInPictureAction
     override fun onCreatePrimaryActions(adapter: ArrayObjectAdapter) {
         super.onCreatePrimaryActions(adapter)
-        adapter.add(mRewindAction)
-//        adapter.add(mSkipPreviousAction)
-//        adapter.add(mSkipNextAction)
-        adapter.add(mFastForwardAction)
+//        adapter.add(mRewindAction)
+        adapter.add(mSkipPreviousAction)
+        adapter.add(mSkipNextAction)
+//        adapter.add(mFastForwardAction)
     }
 
     override fun onCreateSecondaryActions(adapter: ArrayObjectAdapter) {
         super.onCreateSecondaryActions(adapter)
 
-        adapter.add(mThumbsDownAction);
-        adapter.add(mThumbsUpAction);
-        adapter.add(mShuffleAction);
-        adapter.add(mClosedCaptionAction)
-        adapter.add(mPictureAction)
+//        adapter.add(mThumbsDownAction);
+//        adapter.add(mThumbsUpAction);
+//        adapter.add(mShuffleAction);
+//        adapter.add(mClosedCaptionAction)
+//        adapter.add(mPictureAction)
         //Botones secundarios, le agregamos los iconos
-        mPictureAction.icon = ContextCompat.getDrawable(context, R.drawable.ic_baseline_settings_24)
+//        mPictureAction.icon = ContextCompat.getDrawable(context, R.drawable.ic_baseline_settings_24)
     }
 
     //Aca se manejan las acciones aparentemente
     override fun onActionClicked(action: Action) {
         if (shouldDispatchAction(action)) {
-            if (action === mFastForwardAction) {
-                playerAdapter!!.seekTo(playerAdapter!!.currentPosition + 60000)
-            }
+//            if (action === mFastForwardAction) {
+//                playerAdapter!!.seekTo(playerAdapter!!.currentPosition + 60000)
+//            }
 
             if (action === mPictureAction){
                 mActionListener.onSettings()
@@ -103,7 +103,7 @@ class VideoPlayerGlue(
 
     // Should dispatch actions that the super class does not supply callbacks for.
     private fun shouldDispatchAction(action: Action): Boolean {
-        return action === mRewindAction || action === mFastForwardAction || action === mThumbsDownAction || action === mThumbsUpAction || action === mRepeatAction || action === mShuffleAction || action === mClosedCaptionAction || action === mPictureAction
+        return /*action === mRewindAction || action === mFastForwardAction || */action === mThumbsDownAction || action === mThumbsUpAction || action === mRepeatAction || action === mShuffleAction || action === mClosedCaptionAction || action === mPictureAction
     }
 
     override fun next() {

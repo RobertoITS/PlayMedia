@@ -2,6 +2,7 @@ package com.hvdevs.playmedia.exoplayer2
 
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.content.Context
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.net.Uri
@@ -9,7 +10,7 @@ import android.os.Bundle
 import android.os.CountDownTimer
 import android.os.Handler
 import android.util.Log
-import android.view.*
+import android.view.View
 import android.widget.ImageView
 import android.widget.Toast
 import androidx.constraintlayout.widget.ConstraintLayout
@@ -20,31 +21,37 @@ import com.google.android.exoplayer2.*
 import com.google.android.exoplayer2.analytics.AnalyticsListener
 import com.google.android.exoplayer2.decoder.DecoderReuseEvaluation
 import com.google.android.exoplayer2.ext.ima.ImaAdsLoader
-import com.google.android.exoplayer2.source.DefaultMediaSourceFactory
-import com.google.android.exoplayer2.source.MediaSourceFactory
+import com.google.android.exoplayer2.source.MediaSource
 import com.google.android.exoplayer2.source.dash.DashChunkSource
 import com.google.android.exoplayer2.source.dash.DashMediaSource
 import com.google.android.exoplayer2.source.dash.DefaultDashChunkSource
+import com.google.android.exoplayer2.source.hls.HlsMediaSource
 import com.google.android.exoplayer2.trackselection.AdaptiveTrackSelection
 import com.google.android.exoplayer2.trackselection.DefaultTrackSelector
-import com.google.android.exoplayer2.ui.*
+import com.google.android.exoplayer2.ui.DefaultTrackNameProvider
+import com.google.android.exoplayer2.ui.PlayerView
+import com.google.android.exoplayer2.ui.TrackNameProvider
+import com.google.android.exoplayer2.ui.TrackSelectionDialogBuilder
 import com.google.android.exoplayer2.upstream.DataSource
 import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter
-import com.google.android.exoplayer2.upstream.DefaultDataSource
+import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory
 import com.google.android.exoplayer2.upstream.DefaultHttpDataSource
 import com.google.android.exoplayer2.util.EventLogger
 import com.google.android.exoplayer2.util.MimeTypes
 import com.google.android.exoplayer2.util.Util
 import com.google.android.exoplayer2.video.VideoSize
-import com.google.common.collect.ImmutableList
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
 import com.google.gson.Gson
-import com.hvdevs.playmedia.R.*
+import com.google.gson.reflect.TypeToken
+import com.hvdevs.playmedia.R.id
 import com.hvdevs.playmedia.databinding.ActivityPlayerBinding
+import com.hvdevs.playmedia.mainlist.constructor.ChildModel
+import com.hvdevs.playmedia.mainlist.constructor.ParentModel
 import com.hvdevs.playmedia.utilities.WindowSystemUtilities
 import com.hvdevs.playmedia.utilities.WindowSystemUtilities.hideSystemUI
-import com.hvdevs.playmedia.utilities.WindowSystemUtilities.showSystemUI
+import java.lang.reflect.Type
+import java.util.*
 import kotlin.properties.Delegates
 
 
@@ -68,6 +75,10 @@ class PlayerActivity : Activity(), Player.Listener, AnalyticsListener, AdEvent.A
     private lateinit var uid: String //Variable que obtiene la uid que se pasa de la actividad anterior
     private lateinit var streamUrl: String //Variable para pasar los datos al reproductor
     private lateinit var licenceUrl: String //Variable para pasar los datos al reproductor
+    private var list: ArrayList<ParentModel> = arrayListOf()
+    private var childList: ArrayList<ChildModel> = arrayListOf()
+    private var childCurrentPosition = 0
+    private var parentPosition = 0
 
     //---------------------------------------------------------------------------------//
     private var playerView: PlayerView? = null
@@ -89,14 +100,24 @@ class PlayerActivity : Activity(), Player.Listener, AnalyticsListener, AdEvent.A
         binding = ActivityPlayerBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        val sp = getSharedPreferences("videoData", 0)
+        val sp = getSharedPreferences("channel", 0)
         val bundle: Bundle? = intent.extras
-        uri = sp?.getString("uri", "").toString()
-        drm = sp?.getString("licence", "").toString()
+        with(sp!!){
+            uri = getString("uri", null).toString()
+            drm = getString("licence", null).toString()
+            parentPosition = getInt("parentPosition", 0)
+            childCurrentPosition = getInt("childPosition", 0)
+        }
+
         uid = bundle?.getString("uid").toString()
         time = bundle!!.getLong("time")
         Log.d("TIMETEST", time.toString())
         testContent = bundle.getBoolean("testContent")
+
+        list = getListSP()
+        val parentInfo = list[parentPosition]
+        childList = parentInfo.itemList //Conseguimos la lista de los child
+
 
         streamUrl = uri
         Log.d("DRM", drm)
@@ -124,19 +145,33 @@ class PlayerActivity : Activity(), Player.Listener, AnalyticsListener, AdEvent.A
         //Boton adelantar
         val forwardBtn = playerView!!.findViewById<ImageView>(id.fwd)
         forwardBtn.setOnClickListener {
-            simpleExoPlayer!!.seekTo(
-                simpleExoPlayer!!.currentPosition + 10000
-            )
+//            simpleExoPlayer!!.seekTo(
+//                simpleExoPlayer!!.currentPosition + 10000
+//            )
+            if (childCurrentPosition == childList.size - 1){
+                childCurrentPosition = 0
+                changeChannel(childCurrentPosition)
+            } else {
+                childCurrentPosition += 1
+                changeChannel(childCurrentPosition)
+            }
         }
 
         //Boton rebobinar
         val rewBtn = playerView!!.findViewById<ImageView>(id.rew)
         rewBtn.setOnClickListener {
-            val num = simpleExoPlayer!!.currentPosition - 10000
-            if (num < 0) {
-                simpleExoPlayer!!.seekTo(0)
-            } else {
-                simpleExoPlayer!!.seekTo(simpleExoPlayer!!.currentPosition - 10000)
+//            val num = simpleExoPlayer!!.currentPosition - 10000
+//            if (num < 0) {
+//                simpleExoPlayer!!.seekTo(0)
+//            } else {
+//                simpleExoPlayer!!.seekTo(simpleExoPlayer!!.currentPosition - 10000)
+//            }
+            if (childCurrentPosition == 0){ //La unica condicion mas extraña es que el contador llegue a cero
+                childCurrentPosition = childList.size - 1
+                changeChannel(childCurrentPosition)
+            } else { //Caso contrario, le resta 1 a la posicion
+                childCurrentPosition -= 1
+                changeChannel(childCurrentPosition)
             }
         }
 
@@ -210,34 +245,12 @@ class PlayerActivity : Activity(), Player.Listener, AnalyticsListener, AdEvent.A
         playerView = binding.exoPlayerView
         playerView!!.player = simpleExoPlayer
 
-        val defaultHttpDataSourceFactory = DefaultHttpDataSource.Factory()
-            .setUserAgent(userAgent)
-            .setTransferListener(
-                DefaultBandwidthMeter.Builder(this)
-                    .setResetOnNetworkTypeChange(false)
-                    .build()
-            )
-
-        val dashChunkSourceFactory: DashChunkSource.Factory = DefaultDashChunkSource.Factory(
-            defaultHttpDataSourceFactory
-        )
-
-        val manifestDataSourceFactory = DefaultHttpDataSource.Factory().setUserAgent(userAgent)
-
-        val dashMediaSource =
-            DashMediaSource.Factory(dashChunkSourceFactory, manifestDataSourceFactory)
-                .createMediaSource(
-                    MediaItem.Builder()
-                        .setUri(Uri.parse(uri))
-                        // DRM Configuration
-                        .setDrmConfiguration(
-                            MediaItem.DrmConfiguration.Builder(drmSchemeUuid)
-                                .setLicenseUri(licenceUrl).build()
-                        )
-                        .setMimeType(MimeTypes.APPLICATION_MPD)
-                        .setTag(null)
-                        .build()
-                )
+        val dashMediaSource = if ("m3u8" in uri){
+            Toast.makeText(this, "M3U8", Toast.LENGTH_SHORT).show()
+            m3u8()
+        } else {
+            nom3u8(userAgent, drmSchemeUuid)
+        }
 
         val handler = Handler()
         val adaptiveTrackSelection = AdaptiveTrackSelection.Factory()
@@ -266,13 +279,17 @@ class PlayerActivity : Activity(), Player.Listener, AnalyticsListener, AdEvent.A
     }
 
     private fun showDialog() {
-        val trackSelector = TrackSelectionDialogBuilder(
-            this,
-            "Select Track",
-            trackSelector,
-            0
-        ).build()
-        trackSelector.show()
+        try{
+            val trackSelector = TrackSelectionDialogBuilder(
+                this,
+                "Select Track",
+                trackSelector,
+                0
+            ).build()
+            trackSelector.show()
+        } catch (e:NullPointerException){
+            Toast.makeText(this, "Cargando...", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun trackListDetails() {
@@ -458,4 +475,55 @@ class PlayerActivity : Activity(), Player.Listener, AnalyticsListener, AdEvent.A
         const val SUBS = "https://bitdash-a.akamaihd.net/content/sintel/hls/subtitles_en.vtt"
     }
 
+    private fun m3u8(): MediaSource {
+        val dataSourceFactory: DataSource.Factory =
+            DefaultDataSourceFactory(this, "exoplayer-codelab")
+
+        return HlsMediaSource.Factory(dataSourceFactory)
+            .createMediaSource(MediaItem.fromUri(uri))
+    }
+
+    private fun nom3u8(userAgent: String, drmSchemeUuid: UUID): DashMediaSource {
+        val defaultHttpDataSourceFactory = DefaultHttpDataSource.Factory()
+            .setUserAgent(userAgent)
+            .setTransferListener(
+                DefaultBandwidthMeter.Builder(this)
+                    .setResetOnNetworkTypeChange(false)
+                    .build()
+            )
+
+        val dashChunkSourceFactory: DashChunkSource.Factory = DefaultDashChunkSource.Factory(
+            defaultHttpDataSourceFactory
+        )
+
+        val manifestDataSourceFactory = DefaultHttpDataSource.Factory().setUserAgent(userAgent)
+
+        return DashMediaSource.Factory(dashChunkSourceFactory, manifestDataSourceFactory)
+            .createMediaSource(
+                MediaItem.Builder()
+                    .setUri(Uri.parse(uri))
+                    // DRM Configuration
+                    .setDrmConfiguration(
+                        MediaItem.DrmConfiguration.Builder(drmSchemeUuid)
+                            .setLicenseUri(licenceUrl).build()
+                    )
+                    .setMimeType(MimeTypes.APPLICATION_MPD)
+                    .setTag(null)
+                    .build()
+            )
+    }
+
+    private fun getListSP(): ArrayList<ParentModel> { //Obtenemos las SP con la lista convertida, para reconstruir
+        val sp = getSharedPreferences("channel", Context.MODE_PRIVATE) //Obtenemos las SP
+        val json = sp?.getString("list", null)
+        val type: Type = object : TypeToken<ArrayList<ParentModel>>() {}.type
+        return Gson().fromJson(json, type)
+    }
+
+    private fun changeChannel(childCurrentPosition: Int) { //Cambiamos el canal
+        releasePlayer()
+        uri = childList[childCurrentPosition].uri
+        licenceUrl = childList[childCurrentPosition].drm_license_url
+        initializePlayer()
+    }
 }

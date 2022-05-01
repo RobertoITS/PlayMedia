@@ -2,6 +2,7 @@ package com.hvdevs.playmedia.mainlist.ui
 
 import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences.*
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
@@ -14,10 +15,11 @@ import androidx.lifecycle.ViewModelProvider
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
+import com.google.gson.Gson
+import com.hvdevs.playmedia.R.*
 import com.hvdevs.playmedia.databinding.ActivityMainListViewBinding
 import com.hvdevs.playmedia.exoplayer2.PlayerActivity
 import com.hvdevs.playmedia.exoplayer2.leanbackforandroidtv.LeanbackActivity
-import com.hvdevs.playmedia.exoplayer2.leanbackforandroidtv.LeanbackFragmentPlayer
 import com.hvdevs.playmedia.login.constructor.User
 import com.hvdevs.playmedia.login.ui.LoginActivity
 import com.hvdevs.playmedia.mainlist.adapters.ExpandedListAdapter
@@ -44,7 +46,6 @@ class MainListActivity : AppCompatActivity() {
     private lateinit var uid: String //Uid del usuario
     private var testContent = false //Controla el contenido de prueba
     private var session = 0 //Sesiones activas del usuario
-
 //    private var isTv: Boolean = false
 
     private val viewModel by lazy { //Instanciamos el view model con sus implementos usando el Factory
@@ -80,80 +81,98 @@ class MainListActivity : AppCompatActivity() {
 
         //El click listener de los child en la lista principal
         binding.mainList.setOnChildClickListener { expandableListView, view, parentPosition, childPosition, long ->
-            val parentInfo = itemList[parentPosition]
-            val childInfo = parentInfo.itemList[childPosition]
+            if (userData?.active!!) {
+                /** esto mismo hacer en el player activity*/
+                val parentInfo = itemList[parentPosition]
+                val childInfo = parentInfo.itemList[childPosition]
 
-            //Shared Preferences
-            //Para el fragment que lo reproduce, solo le pasamos esta informacion, la actividad recibe el resto
-            val sp = getSharedPreferences("videoData", Context.MODE_PRIVATE)
-            with(sp.edit()) {
+                //Shared Preferences
+                //Para el fragment que lo reproduce, solo le pasamos esta informacion, la actividad recibe el resto
+                val sp = getSharedPreferences("channel", Context.MODE_PRIVATE)!! //Las SP
+                with(sp.edit()) {
 
-                putString("uri", childInfo.uri)
-                putString("licence", childInfo.drm_license_url)
-
-                apply()
-            }
-
-            //Pasamos el intent dependiendo del dispositivo
-            val intent: Intent = if (isTv()/*No necesitamos crear un variable!*/)
-                Intent(this, LeanbackActivity::class.java)
-            else Intent(this, PlayerActivity::class.java)
-
-            //Pasamos la licencia y la uri para el reproductor
-            intent.putExtra("licence", childInfo.drm_license_url)
-            intent.putExtra("uri", childInfo.uri)
-            intent.putExtra("uid", uid)
-
-            //Comparamos las condiciones del usuario
-            //En este caso el tipo de usuario
-            when (userData?.type) {
-                0 -> {
-                    if (userData?.time!! < 2000){
-                        Toast.makeText(this, "Su tiempo de prueba expiro", Toast.LENGTH_SHORT).show()
-                    } else{
-                        testContent = true
-                        Toast.makeText(this, "Contenido de prueba", Toast.LENGTH_SHORT).show()
-                        Log.d("TEST", userData?.time.toString())
-                        //Pasamos el tiempo restante de prueba
-                        intent.putExtra("time", userData?.time)
-                        //pasamos que es contenido de prueba
-                        intent.putExtra("testContent", testContent)
-                        startActivity(intent)
-                    }
+                    putString("uri", childInfo.uri)
+                    putString("licence", childInfo.drm_license_url)
+                    putInt("parentPosition", parentPosition)
+                    putInt("childPosition", childPosition)
+                    apply()
                 }
-                1 -> {
 
-                    //Formateador de las fechas por patron
-                    val formatter: DateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
-                    //Parseamos la fecha obtenida de la db
-                    val serverDate = LocalDate.parse(userData?.expire.toString(), DateTimeFormatter.ofPattern("dd/MM/yyyy"))
-                    //La formateamos
-                    val serverDateFormatted = formatter.format(serverDate)
-                    //Obtenemos la fecha del dispositivo (local)
-                    val localDate = LocalDate.now()
-                    //La formateamos
-                    val localDateFormatted = formatter.format(localDate)
-                    //Si la fecha es mayor, reproduce el contenido
-                    if (serverDateFormatted < localDateFormatted){
+                //Pasamos el intent dependiendo del dispositivo
+                val intent: Intent = if (isTv()/*No necesitamos crear un variable!! */)
+                    Intent(this, LeanbackActivity::class.java)
+                else Intent(this, PlayerActivity::class.java)
+
+                //Pasamos la licencia y la uri para el reproductor
+                intent.putExtra("licence", childInfo.drm_license_url)
+                intent.putExtra("uri", childInfo.uri)
+                intent.putExtra("uid", uid)
+
+                //Comparamos las condiciones del usuario
+                //En este caso el tipo de usuario
+                when (userData?.type) {
+                    0 -> {
+                        if (userData?.time!! < 2000) {
+                            Toast.makeText(this, "Su tiempo de prueba expiro", Toast.LENGTH_SHORT)
+                                .show()
+                        } else {
+                            testContent = true
+                            Toast.makeText(this, "Contenido de prueba", Toast.LENGTH_SHORT).show()
+                            Log.d("TEST", userData?.time.toString())
+                            //Pasamos el tiempo restante de prueba
+                            intent.putExtra("time", userData?.time)
+                            //pasamos que es contenido de prueba
+                            intent.putExtra("testContent", testContent)
+                            startActivity(intent)
+                        }
+                    }
+                    1 -> {
+
+                        //Formateador de las fechas por patron
+//                    val formatter: DateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
+                        //Parseamos la fecha obtenida de la db
+//                    val serverDate = LocalDate.parse(userData?.expire.toString() /*, DateTimeFormatter.ofPattern("dd/MM/yyyy")*/)
+                        //La formateamos
+//                    val serverDateFormatted = formatter.format(serverDate)
+                        //Obtenemos la fecha del dispositivo (local)
+//                    val localDate = LocalDate.now()
+                        //La formateamos
+//                    val localDateFormatted = formatter.format(localDate)
+                        //Si la fecha es mayor, reproduce el contenido
+//                    if (/*serverDateFormatted*/serverDate > localDate /*localDateFormatted*/){
                         //Pasamos si es contenido de prueba o no
                         intent.putExtra("testContent", testContent)
                         startActivity(intent)
-                    //Caso contrario, no lo reproduce
-                    } else {
-                        Toast.makeText(this, "Su licencia expiró", Toast.LENGTH_SHORT).show()
+                        //Caso contrario, no lo reproduce
+//                    } else {
+//                        Toast.makeText(this, "Su licencia expiró", Toast.LENGTH_SHORT).show()
+//                    }
                     }
                 }
+            } else {
+                //Creamos un dialog builder para el cierre de sesion
+                val dialogBuilder = AlertDialog.Builder(this)
+                dialogBuilder
+                    .setMessage("Su cuenta a sido desactivada.")
+                    .setCancelable(false) //No se puede cancelar el dialog
+                    .setPositiveButton("Salir") { dialog, which ->
+                        logOut()
+                        dialog.dismiss()
+                    }
+                val alert = dialogBuilder.create()
+                alert.setTitle("Error de sesion")
+                alert.show()
             }
             false
         }
 
         //Le agregamos estilo a los colores del refresco
-//        binding.swipeLayout.setColorSchemeResources(
-//            color.s1,
-//            color.s2,
-//            color.s3,
-//            color.s4
-//        )
+        binding.swipeLayout.setColorSchemeResources(
+            color.s1,
+            color.s2,
+            color.s3,
+            color.s4
+        )
 
         //Accion de refresco
         binding.swipeLayout.setOnRefreshListener {
@@ -186,7 +205,7 @@ class MainListActivity : AppCompatActivity() {
         alert.show()
     }
 
-    //Obtenemos los datos de la lista usando el viewModel y los corrutinas
+    //Obtenemos los datos de la lista usando el viewModel y las corrutinas
     private fun getListData() {
         viewModel.fetchListData.observe(this@MainListActivity){ result ->
             if (Connectivity.isOnlineNet() == true){ //Comprobamos que haya conexion a internet:
@@ -196,6 +215,8 @@ class MainListActivity : AppCompatActivity() {
                     }
                     is Resource.Success -> { //Cuando se obtienen los datos
                         initExpandableListView(result.data) //Inicializamos el expandableListView
+                        //Pasamos la lista al shared preferences:
+                        saveListSP(result.data)
                         binding.progressBar.visibility = View.GONE //Ocultamos el progressBar
                         if (binding.swipeLayout.isRefreshing) {
                             binding.swipeLayout.isRefreshing = false //Paramos la animacion de refresco
@@ -214,6 +235,16 @@ class MainListActivity : AppCompatActivity() {
                 binding.swipeLayout.isRefreshing = false //Paramos la animacion de refresco
             }
         }
+    }
+
+    private fun saveListSP(list: ArrayList<ParentModel>) { //Guardamos la lista en las SP
+        val sp = getSharedPreferences("channel", Context.MODE_PRIVATE)!! //Las SP
+        val listToJson = Gson().toJson(list) //Pasamos la lista a String
+        with(sp.edit()){ //Las SP
+            putString("list", listToJson) //La colocamos en las SP, luego la obtenemos
+            apply()
+        }
+
     }
 
     private fun initExpandableListView(data: ArrayList<ParentModel>) {

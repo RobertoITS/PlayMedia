@@ -48,6 +48,8 @@
         <entry key="app/src/main/res/layout/activity_player.xml" value="0.11277173913043478" />
         <entry key="app/src/main/res/layout/controls_layout.xml" value="0.1" />
         <entry key="app/src/main/res/layout/custom_controls.xml" value="0.21" />
+        <entry key="app/src/main/res/layout/layout_child.xml" value="0.22" />
+        <entry key="app/src/main/res/layout/layout_group.xml" value="0.22" />
       </map>
     </option>
   </component>

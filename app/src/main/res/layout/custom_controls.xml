@@ -20,34 +20,6 @@
         app:layout_constraintHorizontal_bias=".05"
         app:tint="@color/white"/>
 
-
-    <ImageView
-        android:id="@+id/exo_playback_speed"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="8dp"
-        android:layout_marginBottom="28dp"
-        android:src="@drawable/exo_ic_speed"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/speed"
-        app:tint="@color/white">
-
-    </ImageView>
-
-    <TextView
-        android:id="@+id/speed"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="8dp"
-        android:text="1X"
-        android:textColor="@color/white"
-        android:textStyle="bold"
-        android:visibility="gone"
-        app:layout_constraintBottom_toBottomOf="@+id/exo_playback_speed"
-        app:layout_constraintEnd_toStartOf="@+id/exo_track_selection_view">
-
-    </TextView>
-
     <ImageView
         android:id="@+id/exo_track_selection_view"
         android:layout_width="wrap_content"
@@ -108,7 +80,7 @@
         android:layout_height="35dp"
         android:layout_marginEnd="64dp"
         android:scaleType="centerCrop"
-        android:src="@drawable/ic_baseline_forward_10_24"
+        android:src="@drawable/ic_next"
         app:layout_constraintBottom_toBottomOf="@+id/exo_play"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="@+id/exo_play"
@@ -162,7 +134,7 @@
         android:layout_height="35dp"
         android:layout_marginStart="64dp"
         android:scaleType="centerCrop"
-        android:src="@drawable/ic_baseline_replay_10_24"
+        android:src="@drawable/ic_previous"
         app:layout_constraintBottom_toBottomOf="@+id/exo_play"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="@+id/exo_play"
