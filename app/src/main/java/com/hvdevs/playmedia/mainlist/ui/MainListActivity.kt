@@ -29,7 +29,9 @@ import com.hvdevs.playmedia.mainlist.viewmodel.presentation.viewmodel.MainListVi
 import com.hvdevs.playmedia.mainlist.viewmodel.presentation.viewmodel.MainListViewModelFactory
 import com.hvdevs.playmedia.resourse.Resource
 import com.hvdevs.playmedia.utilities.Connectivity
+import com.jakewharton.threetenabp.AndroidThreeTen
 import org.threeten.bp.LocalDate
+import org.threeten.bp.OffsetDateTime
 import org.threeten.bp.format.DateTimeFormatter
 import android.os.Build.VERSION_CODES as VERSION_CODES1
 
@@ -57,6 +59,7 @@ class MainListActivity : AppCompatActivity() {
     @RequiresApi(VERSION_CODES1.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         binding = ActivityMainListViewBinding.inflate(layoutInflater)
+        AndroidThreeTen.init(this)
         super.onCreate(savedInstanceState)
         setContentView(binding.root)
 
@@ -128,25 +131,28 @@ class MainListActivity : AppCompatActivity() {
                     1 -> {
 
                         //Formateador de las fechas por patron
-                    val formatter: DateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
+                        val formatter: DateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
                         //Parseamos la fecha obtenida de la db
-                    val serverDate = LocalDate.parse(userData?.expire.toString(), DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+                        val serverDate = LocalDate.parse(userData?.expire.toString(), DateTimeFormatter.ofPattern("dd/MM/yyyy"))
                         //La formateamos
-                    val serverDateFormatted = formatter.format(serverDate)
+//                        val serverDateFormatted = formatter.format(serverDate)
                         //Obtenemos la fecha del dispositivo (local)
-                    val localDate = LocalDate.now()
+                        val localDate = LocalDate.now()
                         //La formateamos
-                    val localDateFormatted = formatter.format(localDate)
+//                        val localDateFormatted = formatter.format(localDate)
                         //Si la fecha es mayor, reproduce el contenido
-                        Toast.makeText(this, serverDateFormatted + localDateFormatted, Toast.LENGTH_LONG).show()
-                    if (serverDateFormatted > localDateFormatted){
-                        //Pasamos si es contenido de prueba o no
-                        intent.putExtra("testContent", testContent)
-                        startActivity(intent)
-                        //Caso contrario, no lo reproduce
-                    } else {
-                        Toast.makeText(this, "Su licencia expiró", Toast.LENGTH_SHORT).show()
-                    }
+//                        Toast.makeText(this, serverDateFormatted + localDateFormatted, Toast.LENGTH_LONG).show()
+//                        val localTimeToMillis = OffsetDateTime.parse(localDateFormatted).toInstant().toEpochMilli()
+//                        val serverTimeToMillis = OffsetDateTime.parse(serverDateFormatted).toInstant().toEpochMilli()
+                        Toast.makeText(this, "$serverDate, $localDate", Toast.LENGTH_LONG).show()
+                        if (serverDate > localDate){
+                            //Pasamos si es contenido de prueba o no
+                            intent.putExtra("testContent", testContent)
+                            startActivity(intent)
+                            //Caso contrario, no lo reproduce
+                        } else {
+                            Toast.makeText(this, "Su licencia expiró", Toast.LENGTH_SHORT).show()
+                        }
                     }
                 }
             } else {

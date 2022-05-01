@@ -51,6 +51,7 @@
         <entry key="app/src/main/res/layout/custom_controls.xml" value="0.21" />
         <entry key="app/src/main/res/layout/layout_child.xml" value="0.22" />
         <entry key="app/src/main/res/layout/layout_group.xml" value="0.22" />
+        <entry key="app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml" value="0.1" />
       </map>
     </option>
   </component>
