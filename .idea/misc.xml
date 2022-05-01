@@ -42,6 +42,7 @@
         <entry key="app/src/main/res/drawable/ic_baseline_settings_24.xml" value="0.1465" />
         <entry key="app/src/main/res/drawable/ic_settings.xml" value="0.1465" />
         <entry key="app/src/main/res/drawable/progress_bar_bkg.xml" value="0.103" />
+        <entry key="app/src/main/res/layout/activity_leanback.xml" value="0.17074275362318841" />
         <entry key="app/src/main/res/layout/activity_login.xml" value="0.22" />
         <entry key="app/src/main/res/layout/activity_main.xml" value="0.17119565217391305" />
         <entry key="app/src/main/res/layout/activity_main_list_view.xml" value="0.21" />

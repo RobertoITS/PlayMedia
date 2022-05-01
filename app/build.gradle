@@ -97,4 +97,7 @@ dependencies {
     implementation "androidx.leanback:leanback-preference:1.2.0-alpha02"
     implementation "androidx.leanback:leanback-paging:1.1.0-alpha09"
     implementation "androidx.leanback:leanback-tab:1.1.0-beta01"
+
+    //Date for lower API
+    implementation 'com.jakewharton.threetenabp:threetenabp:1.4.0'
 }

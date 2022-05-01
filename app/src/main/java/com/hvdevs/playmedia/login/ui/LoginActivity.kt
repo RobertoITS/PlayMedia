@@ -343,6 +343,7 @@ class LoginActivity : AppCompatActivity() {
             .setMessage("Existe mas de dos (2) sesiones activas")
             .setCancelable(false) //No se puede cancelar el dialog
             .setPositiveButton("Ok") { dialog, which ->
+                auth.signOut()
                 finish()
                 dialog.dismiss()
             }

@@ -2,7 +2,6 @@ package com.hvdevs.playmedia.mainlist.ui
 
 import android.content.Context
 import android.content.Intent
-import android.content.SharedPreferences.*
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
@@ -30,8 +29,8 @@ import com.hvdevs.playmedia.mainlist.viewmodel.presentation.viewmodel.MainListVi
 import com.hvdevs.playmedia.mainlist.viewmodel.presentation.viewmodel.MainListViewModelFactory
 import com.hvdevs.playmedia.resourse.Resource
 import com.hvdevs.playmedia.utilities.Connectivity
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
+import org.threeten.bp.LocalDate
+import org.threeten.bp.format.DateTimeFormatter
 import android.os.Build.VERSION_CODES as VERSION_CODES1
 
 class MainListActivity : AppCompatActivity() {
@@ -129,24 +128,25 @@ class MainListActivity : AppCompatActivity() {
                     1 -> {
 
                         //Formateador de las fechas por patron
-//                    val formatter: DateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
+                    val formatter: DateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
                         //Parseamos la fecha obtenida de la db
-//                    val serverDate = LocalDate.parse(userData?.expire.toString() /*, DateTimeFormatter.ofPattern("dd/MM/yyyy")*/)
+                    val serverDate = LocalDate.parse(userData?.expire.toString(), DateTimeFormatter.ofPattern("dd/MM/yyyy"))
                         //La formateamos
-//                    val serverDateFormatted = formatter.format(serverDate)
+                    val serverDateFormatted = formatter.format(serverDate)
                         //Obtenemos la fecha del dispositivo (local)
-//                    val localDate = LocalDate.now()
+                    val localDate = LocalDate.now()
                         //La formateamos
-//                    val localDateFormatted = formatter.format(localDate)
+                    val localDateFormatted = formatter.format(localDate)
                         //Si la fecha es mayor, reproduce el contenido
-//                    if (/*serverDateFormatted*/serverDate > localDate /*localDateFormatted*/){
+                        Toast.makeText(this, serverDateFormatted + localDateFormatted, Toast.LENGTH_LONG).show()
+                    if (serverDateFormatted > localDateFormatted){
                         //Pasamos si es contenido de prueba o no
                         intent.putExtra("testContent", testContent)
                         startActivity(intent)
                         //Caso contrario, no lo reproduce
-//                    } else {
-//                        Toast.makeText(this, "Su licencia expiró", Toast.LENGTH_SHORT).show()
-//                    }
+                    } else {
+                        Toast.makeText(this, "Su licencia expiró", Toast.LENGTH_SHORT).show()
+                    }
                     }
                 }
             } else {
