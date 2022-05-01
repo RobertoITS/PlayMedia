@@ -238,7 +238,7 @@ class PlayerActivity : Activity(), Player.Listener, AnalyticsListener, AdEvent.A
     //Las demas funciones viene predeterminadas en el repositorio clonado
     private fun initializePlayer() {
         val userAgent = "ExoPlayer-Drm"
-        val drmSchemeUuid = C.WIDEVINE_UUID // DRM Type
+        val drmSchemeUuid: UUID = C.WIDEVINE_UUID // DRM Type
 
         trackSelector = DefaultTrackSelector(this)
         simpleExoPlayer = SimpleExoPlayer.Builder(this).setTrackSelector(trackSelector).build()
@@ -246,7 +246,7 @@ class PlayerActivity : Activity(), Player.Listener, AnalyticsListener, AdEvent.A
         playerView!!.player = simpleExoPlayer
 
         val dashMediaSource = if ("m3u8" in uri){
-            Toast.makeText(this, "M3U8", Toast.LENGTH_SHORT).show()
+//            Toast.makeText(this, "M3U8", Toast.LENGTH_SHORT).show()
             m3u8()
         } else {
             nom3u8(userAgent, drmSchemeUuid)
@@ -278,11 +278,11 @@ class PlayerActivity : Activity(), Player.Listener, AnalyticsListener, AdEvent.A
         exoPlayer.prepare()
     }
 
-    private fun showDialog() {
-        try{
-            val trackSelector = TrackSelectionDialogBuilder(
+    private fun showDialog() { //El problema que teniamos, es que si abriamos el dialogo del
+        try{ //selector de pistas, salia un nullPointerException.
+            val trackSelector = TrackSelectionDialogBuilder( //Con este try, catch, lo manejamos
                 this,
-                "Select Track",
+                "Seleccione calidad",
                 trackSelector,
                 0
             ).build()

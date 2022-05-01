@@ -195,7 +195,7 @@ class LeanbackFragmentPlayer : PlaybackSupportFragment(), Player.Listener,
 
     override fun onSettings() {
         //Obtenemos la posicion actual
-        Toast.makeText(context, "Probando botones y su accion", Toast.LENGTH_SHORT).show()
+//        Toast.makeText(context, "Probando botones y su accion", Toast.LENGTH_SHORT).show()
     }
 
     private fun getListSP(): ArrayList<ParentModel> { //Obtenemos las SP con la lista convertida, para reconstruir

@@ -144,7 +144,7 @@ class MainListActivity : AppCompatActivity() {
 //                        Toast.makeText(this, serverDateFormatted + localDateFormatted, Toast.LENGTH_LONG).show()
 //                        val localTimeToMillis = OffsetDateTime.parse(localDateFormatted).toInstant().toEpochMilli()
 //                        val serverTimeToMillis = OffsetDateTime.parse(serverDateFormatted).toInstant().toEpochMilli()
-                        Toast.makeText(this, "$serverDate, $localDate", Toast.LENGTH_LONG).show()
+//                        Toast.makeText(this, "$serverDate, $localDate", Toast.LENGTH_LONG).show()
                         if (serverDate > localDate){
                             //Pasamos si es contenido de prueba o no
                             intent.putExtra("testContent", testContent)
@@ -214,7 +214,7 @@ class MainListActivity : AppCompatActivity() {
     //Obtenemos los datos de la lista usando el viewModel y las corrutinas
     private fun getListData() {
         viewModel.fetchListData.observe(this@MainListActivity){ result ->
-            if (Connectivity.isOnlineNet() == true){ //Comprobamos que haya conexion a internet:
+//            if (Connectivity.isOnlineNet() == true){ //Comprobamos que haya conexion a internet:
                 when (result){
                     is Resource.Loading -> { //Cuando carga los datos:
                         binding.progressBar.visibility = View.VISIBLE //Mostramos el progressBar
@@ -234,12 +234,12 @@ class MainListActivity : AppCompatActivity() {
                         Log.e("FIREBASE ERROR", result.exception.toString())
                     }
                 }
-            }
-            else { //Si no hay conexion:
-                Toast.makeText(this, "No hay conexion a intertet, conectese y acualice lista", Toast.LENGTH_SHORT).show()
+//            }
+//            else { //Si no hay conexion:
+//                Toast.makeText(this, "No hay conexion a intertet, conectese y acualice lista", Toast.LENGTH_SHORT).show()
                 binding.progressBar.visibility = View.GONE
                 binding.swipeLayout.isRefreshing = false //Paramos la animacion de refresco
-            }
+//            }
         }
     }
 
