@@ -4,13 +4,18 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.os.Handler
 import android.util.Log
 import android.view.View
+import android.view.animation.AnimationUtils
+import android.view.animation.CycleInterpolator
+import android.view.animation.TranslateAnimation
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
+import com.airbnb.lottie.LottieAnimationView
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
@@ -31,7 +36,6 @@ import com.hvdevs.playmedia.resourse.Resource
 import com.hvdevs.playmedia.utilities.Connectivity
 import com.jakewharton.threetenabp.AndroidThreeTen
 import org.threeten.bp.LocalDate
-import org.threeten.bp.OffsetDateTime
 import org.threeten.bp.format.DateTimeFormatter
 import android.os.Build.VERSION_CODES as VERSION_CODES1
 
@@ -56,15 +60,15 @@ class MainListActivity : AppCompatActivity() {
         )[MainListViewModel::class.java]
     }
 
+    private lateinit var runnable: Runnable //Un handler y un runnable para hacer una repeticion de funcionalidad
+    private val handler = Handler()
+
     @RequiresApi(VERSION_CODES1.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         binding = ActivityMainListViewBinding.inflate(layoutInflater)
         AndroidThreeTen.init(this)
         super.onCreate(savedInstanceState)
         setContentView(binding.root)
-
-        // chequeamos si es tv
-//        isTv = isTv()
 
         //Obtenemos el bundle de la actividad anterior
         val bundle: Bundle? = intent.extras
@@ -135,16 +139,9 @@ class MainListActivity : AppCompatActivity() {
                         //Parseamos la fecha obtenida de la db
                         val serverDate = LocalDate.parse(userData?.expire.toString(), DateTimeFormatter.ofPattern("dd/MM/yyyy"))
                         //La formateamos
-//                        val serverDateFormatted = formatter.format(serverDate)
                         //Obtenemos la fecha del dispositivo (local)
                         val localDate = LocalDate.now()
-                        //La formateamos
-//                        val localDateFormatted = formatter.format(localDate)
                         //Si la fecha es mayor, reproduce el contenido
-//                        Toast.makeText(this, serverDateFormatted + localDateFormatted, Toast.LENGTH_LONG).show()
-//                        val localTimeToMillis = OffsetDateTime.parse(localDateFormatted).toInstant().toEpochMilli()
-//                        val serverTimeToMillis = OffsetDateTime.parse(serverDateFormatted).toInstant().toEpochMilli()
-//                        Toast.makeText(this, "$serverDate, $localDate", Toast.LENGTH_LONG).show()
                         if (serverDate > localDate){
                             //Pasamos si es contenido de prueba o no
                             intent.putExtra("testContent", testContent)
@@ -172,28 +169,28 @@ class MainListActivity : AppCompatActivity() {
             false
         }
 
-        //Le agregamos estilo a los colores del refresco
-        binding.swipeLayout.setColorSchemeResources(
+        binding.swipeLayout.setColorSchemeResources( //Le agregamos estilo a los colores del refresco
             color.s1,
             color.s2,
             color.s3,
             color.s4
         )
 
-        //Accion de refresco
-        binding.swipeLayout.setOnRefreshListener {
+        binding.swipeLayout.setOnRefreshListener { //Accion de refresco
+            itemList = arrayListOf() //Vaciamos la lista
+            initExpandableListView(itemList) //Pasamos la lista vacia para vaciar el listView
+            binding.anim.visibility = View.GONE
+            handler.removeCallbacksAndMessages(null) //Removemos las acciones del handler
+            getUserData(uid)
             getListData()
         }
 
-        // boton LogOt, agrego una escucha al click
-        binding.btnLogOut.setOnClickListener {
+        binding.btnLogOut.setOnClickListener { // boton LogOt, agrego una escucha al click
             showDialogSignOut()
         }
-
     }
 
-    //Mostramos el dialogo de cierre de sesion:
-    private fun showDialogSignOut() {
+    private fun showDialogSignOut() { //Mostramos el dialogo de cierre de sesion:
         //Creamos un dialog builder para el cierre de sesion
         val dialogBuilder = AlertDialog.Builder(this)
         dialogBuilder
@@ -211,10 +208,9 @@ class MainListActivity : AppCompatActivity() {
         alert.show()
     }
 
-    //Obtenemos los datos de la lista usando el viewModel y las corrutinas
-    private fun getListData() {
+    private fun getListData() { //Obtenemos los datos de la lista usando el viewModel y las corrutinas
         viewModel.fetchListData.observe(this@MainListActivity){ result ->
-//            if (Connectivity.isOnlineNet() == true){ //Comprobamos que haya conexion a internet:
+            if (Connectivity.isOnlineNet()){ //Comprobamos que haya conexion a internet:
                 when (result){
                     is Resource.Loading -> { //Cuando carga los datos:
                         binding.progressBar.visibility = View.VISIBLE //Mostramos el progressBar
@@ -229,17 +225,13 @@ class MainListActivity : AppCompatActivity() {
                         }
                     }
                     is Resource.Failure -> { //En caso de fallar:
-                        binding.progressBar.visibility = View.GONE //Paramos el progressBar
-                        Toast.makeText(this, result.exception.toString(), Toast.LENGTH_SHORT).show()
-                        Log.e("FIREBASE ERROR", result.exception.toString())
+                        loadingError()
                     }
                 }
-//            }
-//            else { //Si no hay conexion:
-//                Toast.makeText(this, "No hay conexion a intertet, conectese y acualice lista", Toast.LENGTH_SHORT).show()
-                binding.progressBar.visibility = View.GONE
-                binding.swipeLayout.isRefreshing = false //Paramos la animacion de refresco
-//            }
+            }
+            else { //Si no hay conexion:
+                loadingError()
+            }
         }
     }
 
@@ -253,7 +245,7 @@ class MainListActivity : AppCompatActivity() {
 
     }
 
-    private fun initExpandableListView(data: ArrayList<ParentModel>) {
+    private fun initExpandableListView(data: ArrayList<ParentModel>) { //Inicializamos el listView
         itemList = arrayListOf()
         itemList = data //Pasamos los datos obtenidos a la lista principal
         expandedListAdapter = ExpandedListAdapter() //Instanciamos el adaptador
@@ -281,8 +273,7 @@ class MainListActivity : AppCompatActivity() {
         finish()
     }
 
-    //Obtenemos los datos del usuario
-    private fun getUserData(uid: String) {
+    private fun getUserData(uid: String) { //Obtenemos los datos del usuario
         dbUser = FirebaseDatabase.getInstance().reference
         dbUser.child("users").child(uid).get().addOnSuccessListener {
             userData = it.getValue(User::class.java)
@@ -292,12 +283,46 @@ class MainListActivity : AppCompatActivity() {
         }
     }
 
-    private fun isTv(): Boolean {
+    private fun isTv(): Boolean { //Comprobamos si es tv o celular
         return (packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK))
     }
 
     override fun onResume() {
-        getUserData(uid)
+        if (Connectivity.isOnlineNet()){
+            getUserData(uid)
+        } else loadingError()
         super.onResume()
+    }
+
+    private fun swipeAnimation(image: LottieAnimationView, animation: Int){
+        image.setAnimation(animation)
+        image.playAnimation()
+    }
+
+    private fun shakeError(): TranslateAnimation { //Animacion de sacudida
+        val shake = TranslateAnimation(0f, 10f, 0f, 0f)
+        shake.duration = 500
+        shake.interpolator = CycleInterpolator(7f)
+        return shake
+    }
+
+    private fun loadingError() {
+        binding.progressBar.visibility = View.GONE
+        binding.swipeLayout.isRefreshing = false //Paramos la animacion de refresco
+        binding.anim.visibility = View.VISIBLE
+        val anim = AnimationUtils.loadAnimation(this, anim.bounce) //Cargamos la animacion de rebote
+        binding.tvBounce.animation = anim
+        binding.tvBounce.animate()
+        runnable = Runnable {
+            swipeAnimation(binding.animation, raw.swipe_down)
+            binding.tvBounce.startAnimation(shakeError())
+            handler.postDelayed(runnable, 3000) //Pasamos que se repita cada 2 segundos
+        }
+        handler.postDelayed(runnable, 3000) //Dejamos una espera de 1 segundo
+    }
+
+    override fun onStop() {
+        handler.removeCallbacksAndMessages(null)
+        super.onStop()
     }
 }

@@ -100,4 +100,7 @@ dependencies {
 
     //Date for lower API
     implementation 'com.jakewharton.threetenabp:threetenabp:1.4.0'
+
+    //Lottie
+    implementation "com.airbnb.android:lottie:3.4.0"
 }
