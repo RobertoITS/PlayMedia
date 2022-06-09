@@ -66,15 +66,21 @@ class SplashScreen : AppCompatActivity() {
         }
         // si no es nulo, es decir que ya inicio sesion, por lo cual sus datos estan guardados, si ese es el caso lo mandamos a la pagina inicial.
         else {
-            val uid = auth.currentUser!!.uid
-            val dbUser = FirebaseDatabase.getInstance().reference.child("users/$uid/sessions/quantity").get()
-            dbUser.addOnSuccessListener {
-                session = Integer.parseInt(it.value.toString())
-            }
-
-                val intent = Intent(this, MainListActivity::class.java)
-                intent.putExtra("uid", uid)
-                debounce(intent)
+                val uid = auth.currentUser!!.uid
+                val dbUser = FirebaseDatabase.getInstance().reference.child("users/$uid/sessions/quantity").get()
+                dbUser.addOnSuccessListener {
+                    try{ //Usamos un try para atrapar el error en caso que el valor sea nulo
+                        session = Integer.parseInt(it.value.toString())
+                        val intent = Intent(this, MainListActivity::class.java)
+                        intent.putExtra("uid", uid)
+                        debounce(intent)
+                    }
+                    catch (e: NumberFormatException){ //El error seria el numberformatexception
+                        auth.signOut() //Se deslogea antes de crashear la app
+                        val intent = Intent(this, LoginActivity:: class.java)
+                        debounce(intent)
+                    }
+                }
 
         }
 
