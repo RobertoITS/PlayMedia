@@ -1,15 +1,20 @@
 package com.hvdevs.playmedia.exoplayer2
 
+import android.R
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.app.AlertDialog
 import android.content.Context
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.net.Uri
 import android.os.Bundle
 import android.os.CountDownTimer
 import android.os.Handler
 import android.util.Log
+import android.view.ContextThemeWrapper
 import android.view.View
 import android.widget.ImageView
 import android.widget.Toast
@@ -29,7 +34,6 @@ import com.google.android.exoplayer2.source.hls.HlsMediaSource
 import com.google.android.exoplayer2.trackselection.AdaptiveTrackSelection
 import com.google.android.exoplayer2.trackselection.DefaultTrackSelector
 import com.google.android.exoplayer2.ui.DefaultTrackNameProvider
-import com.google.android.exoplayer2.ui.PlayerView
 import com.google.android.exoplayer2.ui.TrackNameProvider
 import com.google.android.exoplayer2.ui.TrackSelectionDialogBuilder
 import com.google.android.exoplayer2.upstream.DataSource
@@ -40,6 +44,7 @@ import com.google.android.exoplayer2.util.EventLogger
 import com.google.android.exoplayer2.util.MimeTypes
 import com.google.android.exoplayer2.util.Util
 import com.google.android.exoplayer2.video.VideoSize
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
 import com.google.gson.Gson
@@ -58,9 +63,7 @@ import kotlin.properties.Delegates
 class PlayerActivity : Activity(), Player.Listener, AnalyticsListener, AdEvent.AdEventListener,
     AdErrorEvent.AdErrorListener, AdsLoader.AdsLoadedListener {
 
-    private lateinit var exoPlayer: ExoPlayer
     private lateinit var binding : ActivityPlayerBinding
-    private lateinit var trackSelector: DefaultTrackSelector
 
     private var adsLoader: ImaAdsLoader? = null
     private var adsManager: AdsManager? = null
@@ -81,8 +84,8 @@ class PlayerActivity : Activity(), Player.Listener, AnalyticsListener, AdEvent.A
     private var parentPosition = 0
 
     //---------------------------------------------------------------------------------//
-    private var playerView: PlayerView? = null
-    private var simpleExoPlayer: SimpleExoPlayer? = null
+    private lateinit var playerView: ExoPlayer
+    private lateinit var trackSelector: DefaultTrackSelector
     //---------------------------------------------------------------------------------//
 
     private lateinit var countDownTimer: CountDownTimer //El contador del reproductor, en caso de modo de prueba
@@ -132,18 +135,11 @@ class PlayerActivity : Activity(), Player.Listener, AnalyticsListener, AdEvent.A
 
         binding.detailBtn.setOnClickListener { showDialog() }
 
-
-        //---------------------------------------------------------------------------------//
-        trackSelector = DefaultTrackSelector(this)
-        simpleExoPlayer = SimpleExoPlayer.Builder(this).setTrackSelector(trackSelector).build()
-        playerView = binding.exoPlayerView
-        playerView!!.player = simpleExoPlayer
-
         //Instanciamos las vistas que estan llamadas desde el archivo layout donde se
         //encuentra el exoPlayerView: app:controller_layout_id="@layout/custom_controls"
 
         //Boton adelantar
-        val forwardBtn = playerView!!.findViewById<ImageView>(id.fwd)
+        val forwardBtn = binding.exoPlayerView.findViewById<ImageView>(id.fwd)
         forwardBtn.setOnClickListener {
 //            simpleExoPlayer!!.seekTo(
 //                simpleExoPlayer!!.currentPosition + 10000
@@ -158,7 +154,7 @@ class PlayerActivity : Activity(), Player.Listener, AnalyticsListener, AdEvent.A
         }
 
         //Boton rebobinar
-        val rewBtn = playerView!!.findViewById<ImageView>(id.rew)
+        val rewBtn = binding.exoPlayerView.findViewById<ImageView>(id.rew)
         rewBtn.setOnClickListener {
 //            val num = simpleExoPlayer!!.currentPosition - 10000
 //            if (num < 0) {
@@ -176,7 +172,7 @@ class PlayerActivity : Activity(), Player.Listener, AnalyticsListener, AdEvent.A
         }
 
         //Fullscreen
-        val fullscreenButton = playerView!!.findViewById<ImageView>(id.fullscreen)
+        val fullscreenButton = binding.exoPlayerView.findViewById<ImageView>(id.fullscreen)
         fullscreenButton.setOnClickListener {
             val orientation: Int =
                 this.resources.configuration.orientation
@@ -191,15 +187,16 @@ class PlayerActivity : Activity(), Player.Listener, AnalyticsListener, AdEvent.A
         }
 
         //Settings button
-        val setting = playerView!!.findViewById<ImageView>(id.exo_track_selection_view)
+        val setting = binding.exoPlayerView.findViewById<ImageView>(id.exo_track_selection_view)
         setting.setOnClickListener {
-            showDialog()
+            //showDialog()
+            audioTrack()
         }
 
         //Back button
-        val back = playerView!!.findViewById<ImageView>(id.exo_back)
+        val back = binding.exoPlayerView.findViewById<ImageView>(id.exo_back)
         back.setOnClickListener {
-            exoPlayer.release()
+            playerView.release()
             finish()
         }
         //---------------------------------------------------------------------------------//
@@ -216,7 +213,7 @@ class PlayerActivity : Activity(), Player.Listener, AnalyticsListener, AdEvent.A
     //Vemos el estado de configuracion en la rotacion de la pantalla
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
-        val root = playerView!!.findViewById<ConstraintLayout>(id.root)
+        val root = binding.exoPlayerView.findViewById<ConstraintLayout>(id.root)
         // Tomamos la variable boolean para saber si esta o no en landscape
         isLandScape = WindowSystemUtilities.checkOrientation(newConfig, window, root)
     }
@@ -240,13 +237,7 @@ class PlayerActivity : Activity(), Player.Listener, AnalyticsListener, AdEvent.A
         val userAgent = "ExoPlayer-Drm"
         val drmSchemeUuid: UUID = C.WIDEVINE_UUID // DRM Type
 
-        trackSelector = DefaultTrackSelector(this)
-        simpleExoPlayer = SimpleExoPlayer.Builder(this).setTrackSelector(trackSelector).build()
-        playerView = binding.exoPlayerView
-        playerView!!.player = simpleExoPlayer
-
         val dashMediaSource = if ("m3u8" in uri){
-//            Toast.makeText(this, "M3U8", Toast.LENGTH_SHORT).show()
             m3u8()
         } else {
             nom3u8(userAgent, drmSchemeUuid)
@@ -255,14 +246,15 @@ class PlayerActivity : Activity(), Player.Listener, AnalyticsListener, AdEvent.A
         val handler = Handler()
         val adaptiveTrackSelection = AdaptiveTrackSelection.Factory()
         trackSelector = DefaultTrackSelector(this, adaptiveTrackSelection)
-        trackSelector.buildUponParameters().setRendererDisabled(C.TRACK_TYPE_TEXT, true).build()
-        val bandwidthMeter = DefaultBandwidthMeter.Builder(this).build()
+        //trackSelector.buildUponParameters().setRendererDisabled(C.TRACK_TYPE_TEXT, false).build()
 
+        val bandwidthMeter = DefaultBandwidthMeter.Builder(this).build()
         bandwidthMeter.addEventListener(handler) { elapsedMs, bytesTransferred, _ ->
             binding.textView.text = (((bytesTransferred * 8).toDouble() / (elapsedMs / 1000)) / 1000).toString()
         }
 
-        exoPlayer = ExoPlayer.Builder(this)
+        //Usamos el exoplayer
+        playerView = ExoPlayer.Builder(this)
             .setTrackSelector(trackSelector)
             .setBandwidthMeter(bandwidthMeter)
             .setSeekForwardIncrementMs(10000)
@@ -270,12 +262,12 @@ class PlayerActivity : Activity(), Player.Listener, AnalyticsListener, AdEvent.A
             .build()
 
         val mEventLogger = EventLogger(trackSelector)
-        exoPlayer.addAnalyticsListener(mEventLogger)
+        playerView.addAnalyticsListener(mEventLogger)
 
-        exoPlayer.playWhenReady = true
-        binding.exoPlayerView.player = exoPlayer
-        exoPlayer.setMediaSource(dashMediaSource, true)
-        exoPlayer.prepare()
+        playerView.playWhenReady = true
+        binding.exoPlayerView.player = playerView
+        playerView.setMediaSource(dashMediaSource, true)
+        playerView.prepare()
     }
 
     private fun showDialog() { //El problema que teniamos, es que si abriamos el dialogo del
@@ -351,6 +343,7 @@ class PlayerActivity : Activity(), Player.Listener, AnalyticsListener, AdEvent.A
                 binding.progressBar.isGone = true
                 //getTrackDetails()
                 trackListDetails()
+                //audioTrack()
             }
             Player.STATE_ENDED -> {
                 println("ENDED")
@@ -371,7 +364,7 @@ class PlayerActivity : Activity(), Player.Listener, AnalyticsListener, AdEvent.A
         if (timeline.isEmpty) {
             return
         }
-        val period = timeline.getPeriod(exoPlayer.currentPeriodIndex, Timeline.Period())
+        val period = timeline.getPeriod(playerView.currentPeriodIndex, Timeline.Period())
         val adGroupTimesUs = LongArray(period.adGroupCount)
         for (i in adGroupTimesUs.indices) {
             adGroupTimesUs[i] = period.getAdGroupTimeUs(i)
@@ -398,7 +391,7 @@ class PlayerActivity : Activity(), Player.Listener, AnalyticsListener, AdEvent.A
 
     private fun releasePlayer() {
         /***/
-        exoPlayer.playWhenReady = false
+        playerView.playWhenReady = false
     }
 
     //Cuando se construye la vista, se iniciliza el exoPlayer
@@ -441,7 +434,7 @@ class PlayerActivity : Activity(), Player.Listener, AnalyticsListener, AdEvent.A
     public override fun onResume() {
         super.onResume()
         if (Util.SDK_INT <= 23)
-            exoPlayer.playWhenReady = true
+            playerView.playWhenReady = true
     }
 
     //En estado de pausa de la vista, el exoPlayer queda en estado de pausa
@@ -461,7 +454,7 @@ class PlayerActivity : Activity(), Player.Listener, AnalyticsListener, AdEvent.A
         super.onDestroy()
         adsLoader?.release()
         //Se libera el reproductor
-        exoPlayer.release()
+        playerView.release()
         Log.e("ADS_DESTROYED", "X")
         if (testContent) countDownTimer.cancel()
     }
@@ -525,5 +518,40 @@ class PlayerActivity : Activity(), Player.Listener, AnalyticsListener, AdEvent.A
         uri = childList[childCurrentPosition].uri
         licenceUrl = childList[childCurrentPosition].drm_license_url
         initializePlayer()
+    }
+
+    private fun audioTrack(){
+        val audioTrack = ArrayList<String>()
+        val audioList = ArrayList<String>()
+        for(group in playerView.currentTracksInfo.trackGroupInfos){
+            if(group.trackType == C.TRACK_TYPE_AUDIO){
+                val groupInfo = group.trackGroup
+                for (i in 0 until groupInfo.length){
+                    audioTrack.add(groupInfo.getFormat(i).language.toString())
+                    audioList.add("${audioList.size + 1}. " + Locale(groupInfo.getFormat(i).language.toString()).displayLanguage + " (${groupInfo.getFormat(i).label})")
+                }
+            }
+        }
+        if(audioList[0].contains("null")) audioList[0] = "1. Default Track"
+        val tempTracks = audioList.toArray(arrayOfNulls<CharSequence>(audioList.size))
+        val context: Context = ContextThemeWrapper(this, com.hvdevs.playmedia.R.style.AppTheme2)
+        val audioDialog = MaterialAlertDialogBuilder(context).setTitle("Lenguaje")
+            .setPositiveButton("Off audio"){ self, _ ->
+                trackSelector.setParameters(trackSelector.buildUponParameters().setRendererDisabled(
+                    C.TRACK_TYPE_AUDIO, true
+                ))
+                self.dismiss()
+            }
+            .setItems(tempTracks){_,position ->
+                Toast.makeText(this, audioList[position] + "Selected", Toast.LENGTH_SHORT).show()
+                trackSelector.setParameters(trackSelector.buildUponParameters()
+                    .setRendererDisabled(C.TRACK_TYPE_AUDIO, false)
+                    .setPreferredAudioLanguage(audioTrack[position])
+                )
+            }
+            .create()
+        audioDialog.show()
+        audioDialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.WHITE)
+        audioDialog.window?.setBackgroundDrawable(ColorDrawable(0x99000000.toInt()))
     }
 }
