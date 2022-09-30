@@ -5,6 +5,7 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.AlertDialog
 import android.content.Context
+import android.content.DialogInterface
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.graphics.Color
@@ -189,7 +190,12 @@ class PlayerActivity : Activity(), Player.Listener, AnalyticsListener, AdEvent.A
         //Settings button
         val setting = binding.exoPlayerView.findViewById<ImageView>(id.exo_track_selection_view)
         setting.setOnClickListener {
-            //showDialog()
+            showDialog()
+        }
+
+        //Audio selector
+        val audio = binding.exoPlayerView.findViewById<ImageView>(id.exo_audio_selection_view)
+        audio.setOnClickListener {
             audioTrack()
         }
 
@@ -521,37 +527,62 @@ class PlayerActivity : Activity(), Player.Listener, AnalyticsListener, AdEvent.A
     }
 
     private fun audioTrack(){
-        val audioTrack = ArrayList<String>()
-        val audioList = ArrayList<String>()
-        for(group in playerView.currentTracksInfo.trackGroupInfos){
-            if(group.trackType == C.TRACK_TYPE_AUDIO){
+        val audioTrack = ArrayList<String>() //Lista con los audios rescatados de la pista
+        val audioList = ArrayList<String>() //Lista con los NOMBRES de los audios
+        for(group in playerView.currentTracksInfo.trackGroupInfos){ //Ingresamos a la informacion de la pista
+            if(group.trackType == C.TRACK_TYPE_AUDIO){ //Nos fijamos si son pistas de audio
                 val groupInfo = group.trackGroup
-                for (i in 0 until groupInfo.length){
+                for (i in 0 until groupInfo.length){ //Las guardamos en una lista
                     audioTrack.add(groupInfo.getFormat(i).language.toString())
-                    audioList.add("${audioList.size + 1}. " + Locale(groupInfo.getFormat(i).language.toString()).displayLanguage + " (${groupInfo.getFormat(i).label})")
+                    //Aqui colocamos los nombres para mostrarlos en el dialog
+                    audioList.add("${audioList.size + 1}. " + Locale(groupInfo.getFormat(i).language.toString()).displayLanguage)
                 }
             }
         }
-        if(audioList[0].contains("null")) audioList[0] = "1. Default Track"
+        //if(audioList[0].contains("null")) audioList[0] = "1. Default Track"
         val tempTracks = audioList.toArray(arrayOfNulls<CharSequence>(audioList.size))
-        val context: Context = ContextThemeWrapper(this, com.hvdevs.playmedia.R.style.AppTheme2)
-        val audioDialog = MaterialAlertDialogBuilder(context).setTitle("Lenguaje")
-            .setPositiveButton("Off audio"){ self, _ ->
-                trackSelector.setParameters(trackSelector.buildUponParameters().setRendererDisabled(
-                    C.TRACK_TYPE_AUDIO, true
-                ))
-                self.dismiss()
+        //val context: Context = ContextThemeWrapper(this, com.hvdevs.playmedia.R.style.AppTheme2)
+//        val audioDialog = MaterialAlertDialogBuilder(context).setTitle("Lenguaje")
+//            .setPositiveButton("Off audio"){ self, _ ->
+//                trackSelector.setParameters(trackSelector.buildUponParameters().setRendererDisabled(
+//                    C.TRACK_TYPE_AUDIO, true
+//                ))
+//                self.dismiss()
+//            }
+//            .setItems(tempTracks){_,position ->
+//                Toast.makeText(this, audioList[position] + "Selected", Toast.LENGTH_SHORT).show()
+//                trackSelector.setParameters(trackSelector.buildUponParameters()
+//                    .setRendererDisabled(C.TRACK_TYPE_AUDIO, false)
+//                    .setPreferredAudioLanguage(audioTrack[position])
+//                )
+//            }
+//            .create()
+//        audioDialog.show()
+//        audioDialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.WHITE)
+//        audioDialog.window?.setBackgroundDrawable(ColorDrawable(0x99000000.toInt()))
+        val builder = AlertDialog.Builder(this)
+        builder.setTitle("Seleccionar lenguaje: ")
+            .setPositiveButton("Sin audio"){ it, _ ->
+                trackSelector
+                    .setParameters(
+                        trackSelector
+                            .buildUponParameters()
+                            .setRendererDisabled(
+                                C.TRACK_TYPE_AUDIO, true)
+                    )
+                it.dismiss()
             }
-            .setItems(tempTracks){_,position ->
-                Toast.makeText(this, audioList[position] + "Selected", Toast.LENGTH_SHORT).show()
-                trackSelector.setParameters(trackSelector.buildUponParameters()
-                    .setRendererDisabled(C.TRACK_TYPE_AUDIO, false)
-                    .setPreferredAudioLanguage(audioTrack[position])
+            .setItems(tempTracks) { _, position ->
+                Toast.makeText(this, "${audioList[position]} seleccionado", Toast.LENGTH_SHORT)
+                    .show()
+                trackSelector.setParameters(
+                    trackSelector
+                        .buildUponParameters()
+                        .setRendererDisabled(C.TRACK_TYPE_AUDIO, false)
+                        .setPreferredAudioLanguage(audioTrack[position])
                 )
             }
             .create()
-        audioDialog.show()
-        audioDialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(Color.WHITE)
-        audioDialog.window?.setBackgroundDrawable(ColorDrawable(0x99000000.toInt()))
+        builder.show()
     }
 }

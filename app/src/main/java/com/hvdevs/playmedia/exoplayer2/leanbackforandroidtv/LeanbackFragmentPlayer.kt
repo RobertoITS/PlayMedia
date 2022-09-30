@@ -211,4 +211,6 @@ class LeanbackFragmentPlayer : PlaybackSupportFragment(), Player.Listener,
         licenceUrl = childList[childCurrentPosition].drm_license_url
         initPlayer(uri, licenceUrl, userAgent, drmSchemeUuid)
     }
+
+    
 }
