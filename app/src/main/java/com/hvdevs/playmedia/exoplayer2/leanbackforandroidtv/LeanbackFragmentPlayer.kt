@@ -1,5 +1,6 @@
 package com.hvdevs.playmedia.exoplayer2.leanbackforandroidtv
 
+import android.app.AlertDialog
 import android.content.Context
 import android.net.Uri
 import android.widget.Toast
@@ -125,10 +126,6 @@ class LeanbackFragmentPlayer : PlaybackSupportFragment(), Player.Listener,
 
     private fun releasePlayer() {
         player?.playWhenReady = false
-//        if (player != null) {
-//            player!!.release()
-//            player = null
-//        }
     }
 
     override fun onStart() {
@@ -195,7 +192,7 @@ class LeanbackFragmentPlayer : PlaybackSupportFragment(), Player.Listener,
 
     override fun onSettings() {
         //Obtenemos la posicion actual
-//        Toast.makeText(context, "Probando botones y su accion", Toast.LENGTH_SHORT).show()
+        audioTrack()
     }
 
     private fun getListSP(): ArrayList<ParentModel> { //Obtenemos las SP con la lista convertida, para reconstruir
@@ -212,5 +209,44 @@ class LeanbackFragmentPlayer : PlaybackSupportFragment(), Player.Listener,
         initPlayer(uri, licenceUrl, userAgent, drmSchemeUuid)
     }
 
-    
+    private fun audioTrack(){
+        val audioTrack = java.util.ArrayList<String>() //Lista con los audios rescatados de la pista
+        val audioList = java.util.ArrayList<String>() //Lista con los NOMBRES de los audios
+        for(group in player?.currentTracksInfo?.trackGroupInfos!!){ //Ingresamos a la informacion de la pista
+            if(group.trackType == C.TRACK_TYPE_AUDIO){ //Nos fijamos si son pistas de audio
+                val groupInfo = group.trackGroup
+                for (i in 0 until groupInfo.length){ //Las guardamos en una lista
+                    audioTrack.add(groupInfo.getFormat(i).language.toString())
+                    //Aqui colocamos los nombres para mostrarlos en el dialog
+                    audioList.add("${audioList.size + 1}. " + Locale(groupInfo.getFormat(i).language.toString()).displayLanguage)
+                }
+            }
+        }
+        val tempTracks = audioList.toArray(arrayOfNulls<CharSequence>(audioList.size))
+        val builder = AlertDialog.Builder(context)
+        builder.setTitle("Seleccionar lenguaje: ")
+            .setPositiveButton("Sin audio"){ it, _ ->
+                trackSelector
+                    ?.setParameters(
+                        trackSelector!!
+                            .buildUponParameters()
+                            .setRendererDisabled(
+                                C.TRACK_TYPE_AUDIO, true)
+                    )
+                it.dismiss()
+            }
+            .setItems(tempTracks) { _, position ->
+                Toast.makeText(context, "${audioList[position]} seleccionado", Toast.LENGTH_SHORT)
+                    .show()
+                trackSelector?.setParameters(
+                    trackSelector!!
+                        .buildUponParameters()
+                        .setRendererDisabled(C.TRACK_TYPE_AUDIO, false)
+                        .setPreferredAudioLanguage(audioTrack[position])
+                )
+            }
+            .create()
+        builder.show()
+    }
+
 }
