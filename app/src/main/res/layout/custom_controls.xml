@@ -34,19 +34,6 @@
     </ImageView>
 
     <ImageView
-        android:id="@+id/exo_audio_selection_view"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="10dp"
-        android:layout_marginBottom="28dp"
-        android:src="@drawable/ic_audiotrack"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/exo_track_selection_view"
-        app:tint="@color/white">
-
-    </ImageView>
-
-    <ImageView
         android:id="@+id/fullscreen"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

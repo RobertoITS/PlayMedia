@@ -4,6 +4,8 @@ import android.app.AlertDialog
 import android.content.Context
 import android.net.Uri
 import android.widget.Toast
+import androidx.core.view.isGone
+import androidx.core.view.isVisible
 import androidx.leanback.app.PlaybackSupportFragment
 import com.google.android.exoplayer2.ui.PlayerView
 import com.hvdevs.playmedia.R
@@ -18,6 +20,9 @@ import com.google.android.exoplayer2.source.dash.DashMediaSource
 import com.google.android.exoplayer2.source.dash.DefaultDashChunkSource
 import com.google.android.exoplayer2.source.hls.HlsMediaSource
 import com.google.android.exoplayer2.trackselection.DefaultTrackSelector
+import com.google.android.exoplayer2.ui.DefaultTrackNameProvider
+import com.google.android.exoplayer2.ui.TrackNameProvider
+import com.google.android.exoplayer2.ui.TrackSelectionDialogBuilder
 import com.google.android.exoplayer2.upstream.DataSource
 import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter
 import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory
@@ -45,6 +50,8 @@ class LeanbackFragmentPlayer : PlaybackSupportFragment(), Player.Listener,
     private val userAgent = "ExoPlayer-Drm"
     private val drmSchemeUuid = C.WIDEVINE_UUID // DRM Type
     private var trackSelector: DefaultTrackSelector? = null //Este es el selector de la calidad del video
+    private val formatList: java.util.ArrayList<String> = java.util.ArrayList()
+    private val bitrateList: java.util.ArrayList<String> = java.util.ArrayList()
 
     private fun preparePlayer(
         player: ExoPlayer,
@@ -191,7 +198,6 @@ class LeanbackFragmentPlayer : PlaybackSupportFragment(), Player.Listener,
     }
 
     override fun onSettings() {
-        //Obtenemos la posicion actual
         audioTrack()
     }
 
@@ -249,4 +255,147 @@ class LeanbackFragmentPlayer : PlaybackSupportFragment(), Player.Listener,
         builder.show()
     }
 
+    //----------------- Cuadro de dialogo general -----------------//
+    private fun audioSubQualityTrackSelector(){
+        val items = arrayListOf(
+            "Audio",
+            "Subtitulos",
+            "Calidad"
+        )
+        val setItems = items.toArray(arrayOfNulls<CharSequence>(items.size))
+        val builder = AlertDialog.Builder(context)
+        builder.setTitle("Seleccionar: ")
+            .setPositiveButton("Salir"){ it, _ ->
+                it.dismiss()
+            }
+            .setItems(setItems) { it, position ->
+                when (position){
+                    0 -> {
+                        audioTrack()
+                        it.dismiss()
+                    }
+                    1 -> {
+                        subTrack()
+                        it.dismiss()
+                    }
+                    2 -> {
+                        qualityTrack()
+                        it.dismiss()
+                    }
+                    else -> { it.dismiss() }
+                }
+            }
+            .create()
+        builder.show()
+    }
+
+    //----------------- Cuadro de dialogo general -----------------//
+
+    //Aca se maneja el estado de carga de los videos
+    override fun onPlaybackStateChanged(playbackState: @Player.State Int) {
+        when (playbackState) {
+            Player.STATE_IDLE -> {
+                println("IDLE")
+            }
+            Player.STATE_BUFFERING -> {
+                println("BUFFERING")
+            }
+            Player.STATE_READY -> {
+                println("READY")
+                trackListDetails() //Al pasar a estar listo, se sacan las calidades de video
+            }
+            Player.STATE_ENDED -> {
+                println("ENDED")
+            }
+        }
+    }
+
+    //Obtenemos las pistas de calidad del video
+    private fun trackListDetails() {
+        formatList.clear()
+        bitrateList.clear()
+
+        if (trackSelector?.currentMappedTrackInfo != null) {
+            val mappedTrackInfo = trackSelector!!.currentMappedTrackInfo
+            for (rendererIndex in 0 until mappedTrackInfo!!.rendererCount) {
+
+                val trackGroupArray = mappedTrackInfo.getTrackGroups(rendererIndex)
+
+                for (groupIndex in 0 until trackGroupArray.length) {
+
+                    for (trackIndex in 0 until trackGroupArray[groupIndex].length) {
+                        val trackNameProvider: TrackNameProvider = DefaultTrackNameProvider(resources)
+                        val trackName = trackNameProvider.getTrackName(
+                            trackGroupArray[groupIndex].getFormat(trackIndex))
+                        val widthHeight = trackName.split(",").toTypedArray()
+                        val height = widthHeight[0].split("×").toTypedArray()
+
+                        if (rendererIndex == 0) {
+                            formatList.add(height[1] + "p")
+                            bitrateList.add(widthHeight[1].replace("Mbps","").trim())
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun subTrack(){
+        val subTrack = java.util.ArrayList<String>() //Lista con los audios rescatados de la pista
+        val subList = java.util.ArrayList<String>() //Lista con los NOMBRES de los audios
+        for(group in player?.currentTracksInfo?.trackGroupInfos!!){ //Ingresamos a la informacion de la pista
+            if(group.trackType == C.TRACK_TYPE_TEXT){ //Nos fijamos si son pistas de audio
+                val groupInfo = group.trackGroup
+                for (i in 0 until groupInfo.length){ //Las guardamos en una lista
+                    subTrack.add(groupInfo.getFormat(i).language.toString())
+                    //Aqui colocamos los nombres para mostrarlos en el dialog
+                    subList.add("${subList.size + 1}. " + Locale(groupInfo.getFormat(i).language.toString()).displayLanguage)
+                }
+            }
+        }
+
+        val tempTracks = subList.toArray(arrayOfNulls<CharSequence>(subList.size))
+
+        val builder = AlertDialog.Builder(context)
+        builder.setTitle("Seleccionar lenguaje: ")
+            .setPositiveButton("Sin subtitulo"){ it, _ ->
+                trackSelector
+                    ?.setParameters(
+                        trackSelector!!
+                            .buildUponParameters()
+                            .setRendererDisabled(
+                                C.TRACK_TYPE_TEXT, true)
+                    )
+                Toast.makeText(context, "Subtitulos desactivados.", Toast.LENGTH_SHORT).show()
+                it.dismiss()
+            }
+            .setItems(tempTracks) { _, position ->
+                Toast.makeText(context, "${subList[position]} seleccionado", Toast.LENGTH_SHORT)
+                    .show()
+                trackSelector?.setParameters(
+                    trackSelector!!
+                        .buildUponParameters()
+                        .setRendererDisabled(C.TRACK_TYPE_TEXT, false)
+                        .setPreferredTextLanguage(subTrack[position])
+                )
+            }
+            .create()
+        builder.show()
+    }
+
+    private fun qualityTrack() { //El problema que teniamos, es que si abriamos el dialogo del
+        try{ //selector de pistas, salia un nullPointerException.
+            val trackSelector = trackSelector?.let {
+                TrackSelectionDialogBuilder( //Con este try, catch, lo manejamos
+                    requireContext(),
+                    "Seleccione calidad",
+                    it,
+                    0
+                ).build()
+            }
+            trackSelector?.show()
+        } catch (e:NullPointerException){
+            Toast.makeText(context, "Cargando...", Toast.LENGTH_SHORT).show()
+        }
+    }
 }
