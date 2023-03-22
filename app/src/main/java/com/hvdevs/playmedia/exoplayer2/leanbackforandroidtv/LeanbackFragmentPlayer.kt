@@ -197,8 +197,12 @@ class LeanbackFragmentPlayer : PlaybackSupportFragment(), Player.Listener,
         }
     }
 
-    override fun onSettings() {
+    override fun onAudio() {
         audioTrack()
+    }
+
+    override fun onSubtitle() {
+        subTrack()
     }
 
     private fun getListSP(): ArrayList<ParentModel> { //Obtenemos las SP con la lista convertida, para reconstruir
@@ -215,6 +219,8 @@ class LeanbackFragmentPlayer : PlaybackSupportFragment(), Player.Listener,
         initPlayer(uri, licenceUrl, userAgent, drmSchemeUuid)
     }
 
+
+    /** Selector de audio */
     private fun audioTrack(){
         val audioTrack = java.util.ArrayList<String>() //Lista con los audios rescatados de la pista
         val audioList = java.util.ArrayList<String>() //Lista con los NOMBRES de los audios
@@ -340,6 +346,7 @@ class LeanbackFragmentPlayer : PlaybackSupportFragment(), Player.Listener,
         }
     }
 
+    /** Selecto de subtitulos */
     private fun subTrack(){
         val subTrack = java.util.ArrayList<String>() //Lista con los audios rescatados de la pista
         val subList = java.util.ArrayList<String>() //Lista con los NOMBRES de los audios

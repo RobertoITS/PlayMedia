@@ -1,9 +1,6 @@
 package com.hvdevs.playmedia.exoplayer2.leanbackforandroidtv
 
 import android.content.Context
-import android.content.res.Resources
-import android.graphics.drawable.Drawable
-import androidx.core.content.ContextCompat
 import androidx.leanback.media.PlayerAdapter
 import androidx.leanback.media.PlaybackTransportControlGlue
 import androidx.leanback.widget.Action
@@ -19,7 +16,6 @@ import androidx.leanback.widget.PlaybackControlsRow.ShuffleAction
 import androidx.leanback.widget.PlaybackControlsRow.PictureInPictureAction
 import androidx.leanback.widget.ArrayObjectAdapter
 import androidx.leanback.widget.PlaybackControlsRow
-import com.hvdevs.playmedia.R
 import java.util.concurrent.TimeUnit
 
 /**
@@ -52,7 +48,9 @@ class VideoPlayerGlue(
         /** Skip to the next item in the queue.  */
         fun onNext()
 
-        fun onSettings()
+        fun onAudio()
+
+        fun onSubtitle()
     }
 
     private val mRepeatAction: RepeatAction
@@ -60,8 +58,8 @@ class VideoPlayerGlue(
     private val mThumbsDownAction: ThumbsDownAction
     private val mSkipPreviousAction: SkipPreviousAction = SkipPreviousAction(context)
     private val mSkipNextAction: SkipNextAction = SkipNextAction(context)
-//    private val mFastForwardAction: FastForwardAction = FastForwardAction(context)
-//    private val mRewindAction: RewindAction = RewindAction(context)
+    private val mFastForwardAction: FastForwardAction = FastForwardAction(context)
+    private val mRewindAction: RewindAction = RewindAction(context)
     private val mClosedCaptionAction: ClosedCaptioningAction
     private val mShuffleAction: ShuffleAction
     private val mPictureAction: PictureInPictureAction
@@ -71,6 +69,8 @@ class VideoPlayerGlue(
         adapter.add(mSkipPreviousAction)
         adapter.add(mSkipNextAction)
 //        adapter.add(mFastForwardAction)
+        adapter.add(mPictureAction) //Para cambiar el audio
+        adapter.add(mClosedCaptionAction) //Para cambiar los subtitulos
     }
 
     override fun onCreateSecondaryActions(adapter: ArrayObjectAdapter) {
@@ -93,8 +93,13 @@ class VideoPlayerGlue(
 //            }
 
             if (action === mPictureAction){
-                mActionListener.onSettings()
+                mActionListener.onAudio()
             }
+
+            if (action === mClosedCaptionAction){
+                mActionListener.onSubtitle()
+            }
+
             return
         }
         // Super class handles play/pause and delegates to abstract methods next()/previous().
